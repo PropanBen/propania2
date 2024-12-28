@@ -1,4 +1,4 @@
-import SocketManager from '../SocketManager';
+import SocketManager from '../SocketManager.js';
 
 export default class GameScene extends Phaser.Scene {
   constructor() {
