@@ -11,7 +11,12 @@ const config = {
   height: 600,
   parent: 'game-container',
   scene: [MenuScene, GameScene],
- 
+  physics: {
+    default: 'arcade',  // Arcade Physics aktivieren
+    arcade: {
+      gravity: { y: 0 },  // Keine Schwerkraft, falls nicht benötigt
+      debug: false  // Optional: Falls du Kollisionen debuggen möchtest, kannst du 
+    }}
 };
 
 const game = new Phaser.Game(config);
