@@ -4,6 +4,7 @@ export default class GameScene extends Phaser.Scene {
   constructor() {
     super({ key: 'GameScene' });
     this.player = null;
+    this.stone = null;
     this.isCameraFollowing = true; // Kamera folgt dem Spieler standardmäßig
     this.cameraZoom = 1;  // Initial zoom level (1 means no zoom)
   }
@@ -14,15 +15,22 @@ export default class GameScene extends Phaser.Scene {
     this.load.image('treeleaves', 'assets/map/images/TreeLeaves.png'); // Tileset TreeLeaves
     this.load.image('trees', 'assets/map/images/TreeStump.png');  
     this.load.image('player', 'assets/players/player.png');  
+    this.load.image('stone', 'assets/map/images/stone.png'); // Lade das Bild des Steins
   }
 
   create() {
     // Create player with physics enabled
-    this.player = this.add.sprite(-200, 900, 'player').setOrigin(0.5, 0.5);
+    this.player = this.physics.add.sprite(-200, 900, 'player').setOrigin(0.5, 0.5);
     this.physics.world.enable(this.player); // Ermögliche Physik für den Spieler
     this.player.body.setCollideWorldBounds(false); // Spieler kann die Weltgrenzen überschreiten
-    this.player.body.setSize(32, 32); // Definiert die Kollisionsgröße (kann angepasst werden)
+    this.player.body.setSize(16, 16); // Definiert die Kollisionsgröße (kann angepasst werden)
     this.player.setDepth(10);
+
+    this.stone = this.physics.add.staticSprite(-150, 950, 'stone'); // "staticSprite" für unbewegliche Objekte
+    this.stone.body.setSize(this.stone.width, this.stone.height); // Kollisionsgröße anpassen
+    this.stone.setDepth(10);
+
+    this.physics.add.collider(this.player, this.stone);
 
   
 
@@ -132,32 +140,23 @@ export default class GameScene extends Phaser.Scene {
   }
 
   update() {
-    // Player movement (basic WASD or arrow keys control)
-    let moveX = 0;
-    let moveY = 0;
+  // Spielerbewegung
+  let moveX = 0;
+  let moveY = 0;
 
-    // Move player left, right, up, down
-    if (this.cursors.left.isDown) {
-      moveX = -this.playerSpeed; // Move left
-    }
-    if (this.cursors.right.isDown) {
-      moveX = this.playerSpeed; // Move right
-    }
-    if (this.cursors.up.isDown) {
-      moveY = -this.playerSpeed; // Move up
-    }
-    if (this.cursors.down.isDown) {
-      moveY = this.playerSpeed; // Move down
-    }
+  const cursors = this.input.keyboard.createCursorKeys(); // Cursors für Pfeiltasten
 
-    // Update player position (x, y)
-    this.player.x += moveX;
-    this.player.y += moveY;
+  if (cursors.left.isDown) moveX = -100;
+  if (cursors.right.isDown) moveX = 100;
+  if (cursors.up.isDown) moveY = -100;
+  if (cursors.down.isDown) moveY = 100;
 
-    // Kamera folgt dem Spieler, wenn der Modus aktiv ist
-    if (this.isCameraFollowing) {
-      this.cameras.main.scrollX = this.player.x - this.cameras.main.width / 2;
-      this.cameras.main.scrollY = this.player.y - this.cameras.main.height / 2;
-    }
+  this.player.body.setVelocity(moveX, moveY); // Geschwindigkeit setzen
+
+  // Kamera folgt dem Spieler
+  if (this.isCameraFollowing) {
+    this.cameras.main.scrollX = this.player.x - this.cameras.main.width / 2;
+    this.cameras.main.scrollY = this.player.y - this.cameras.main.height / 2;
+  }
   }
 }
