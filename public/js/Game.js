@@ -1,5 +1,6 @@
 import MenuScene from './scenes/MenuScene.js';  
 import GameScene from './scenes/GameScene.js'; 
+import IsoMapScene from './scenes/IsoMapScene.js'; 
 
 // Hier kannst du direkt den globalen `io`-Namespace von Socket.IO verwenden
 const socket = io('http://localhost:3000'); // Verbinde mit dem Server
@@ -10,7 +11,7 @@ const config = {
   width: 800,
   height: 600,
   parent: 'game-container',
-  scene: [MenuScene, GameScene],
+  scene: [MenuScene, GameScene, IsoMapScene],
   physics: {
     default: 'arcade',  // Arcade Physics aktivieren
     arcade: {
