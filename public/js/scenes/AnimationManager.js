@@ -3,41 +3,44 @@ export default class AnimationManager {
         this.scene = scene;
         this.player = player;
 
+        // Die letzte Richtung des Spielers speichern
+        this.lastDirection = 'down'; // Standardwert, falls der Spieler zu Beginn steht
+
         // Animationen für den Charakter initialisieren
         this.createAnimations();
     }
 
     createAnimations() {
-        // Idle-Animationen (die Frames aus dem Spritesheet sind angegeben)
+        // Idle-Animationen
         this.scene.anims.create({
             key: 'idle_up',
-            frames: this.scene.anims.generateFrameNumbers('player', { start: this.getFrameIndex(0, 0), end: this.getFrameIndex(0, 3) }),
-            frameRate: 4,  // Geschwindigkeit der Animation
+            frames: this.scene.anims.generateFrameNumbers('player', { start: this.getFrameIndex(22, 0), end: this.getFrameIndex(22, 1) }),
+            frameRate: 1,  // Geschwindigkeit der Animation
             repeat: -1      // Endlos wiederholen
         });
 
         this.scene.anims.create({
             key: 'idle_down',
-            frames: this.scene.anims.generateFrameNumbers('player', { start: this.getFrameIndex(2, 0), end: this.getFrameIndex(2, 1) }),
+            frames: this.scene.anims.generateFrameNumbers('player', { start: this.getFrameIndex(24, 0), end: this.getFrameIndex(24, 1) }),
             frameRate: 1,
             repeat: -1
         });
 
         this.scene.anims.create({
             key: 'idle_left',
-            frames: this.scene.anims.generateFrameNumbers('player', { start: this.getFrameIndex(1, 0), end: this.getFrameIndex(1, 3) }),
-            frameRate: 4,
+            frames: this.scene.anims.generateFrameNumbers('player', { start: this.getFrameIndex(23, 0), end: this.getFrameIndex(23, 1) }),
+            frameRate: 1,
             repeat: -1
         });
 
         this.scene.anims.create({
             key: 'idle_right',
-            frames: this.scene.anims.generateFrameNumbers('player', { start: this.getFrameIndex(3, 0), end: this.getFrameIndex(3, 3) }),
-            frameRate: 4,
+            frames: this.scene.anims.generateFrameNumbers('player', { start: this.getFrameIndex(25, 0), end: this.getFrameIndex(25, 1) }),
+            frameRate: 1,
             repeat: -1
         });
 
-        // Lauf-Animationen (Frames von Start bis End)
+        // Lauf-Animationen
         this.scene.anims.create({
             key: 'run_up',
             frames: this.scene.anims.generateFrameNumbers('player', { start: this.getFrameIndex(34, 0), end: this.getFrameIndex(34, 7) }),
@@ -76,6 +79,7 @@ export default class AnimationManager {
     // Methode zum Setzen der richtigen Animation basierend auf der Bewegungsrichtung
     playAnimation(direction, isRunning) {
         if (isRunning) {
+            this.lastDirection = direction; // Die aktuelle Richtung speichern
             switch (direction) {
                 case 'up':
                     this.player.anims.play('run_up', true);
@@ -91,7 +95,8 @@ export default class AnimationManager {
                     break;
             }
         } else {
-            switch (direction) {
+            // Wenn der Spieler nicht läuft, die letzte Richtung verwenden
+            switch (this.lastDirection) {
                 case 'up':
                     this.player.anims.play('idle_up', true);
                     break;
