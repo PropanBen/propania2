@@ -1,9 +1,6 @@
-
 import CameraControl from '../controls/CameraControl.js';
 import InputManager from '../controls/InputManager.js';
-import VirtualJoystick from '../controls/VirtualJoystick.js';
 import AnimationManager from '../animations/AnimationManager.js';
-import UI from '../UI/UI.js';
 
 export default class GameScene extends Phaser.Scene {
     constructor() {
@@ -12,8 +9,6 @@ export default class GameScene extends Phaser.Scene {
         this.cameraControl = null;
         this.inputManager = null;
         this.animationManager = null;
-        this.joystick = null;
-        this.UI= null; 
     }
 
     preload() {
@@ -36,10 +31,8 @@ export default class GameScene extends Phaser.Scene {
         this.physics.world.enable(this.player);
         this.player.body.setSize(16, 16);
         this.player.setDepth(10);
-        this.UI = new UI(this,this.player)
-        this.UI.create();
+        this.scene.launch('UIScene');
 
-    
         // Karte erstellen
         const map = this.make.tilemap({ key: 'map' });
         const groundTiles = map.addTilesetImage('Ground', 'ground');
@@ -57,39 +50,19 @@ export default class GameScene extends Phaser.Scene {
 
         // Animationen
         this.animationManager = new AnimationManager(this, this.player);
-
-        // Virtuellen Joystick erstellen
-        this.joystick = new VirtualJoystick(this, this.cameras.main, 100, 500, 60, 30);
     }
 
     update() {
         // Spielerbewegung
         const isRunning = this.inputManager.handlePlayerMovement();
-
-        // UI Updaten
-        this.UI.update();
-
-    
-        let direction = 'down'; // Standardrichtung
-        if (this.inputManager.cursors.up.isDown) direction = 'up';
-        else if (this.inputManager.cursors.down.isDown) direction = 'down';
-        else if (this.inputManager.cursors.left.isDown) direction = 'left';
-        else if (this.inputManager.cursors.right.isDown) direction = 'right';
+        const direction = this.inputManager.getDirection(); // Verwende getDirection aus InputManager
 
         this.animationManager.playAnimation(direction, isRunning);
 
         // Kamera aktualisieren
         this.cameraControl.update();
 
-        // Joystick-Position anpassen
-        this.joystick.updatePosition();
-
-        // Spielerbewegung mit Joystick-Richtung kombinieren
-        const joystickDirection = this.joystick.getDirection();
-        if (joystickDirection.x !== 0 || joystickDirection.y !== 0) {
-            const speed = 160;
-            this.player.setVelocityX(joystickDirection.x * speed);
-            this.player.setVelocityY(joystickDirection.y * speed);
-        }
+        // Spielerdaten an UIScene senden
+        this.scene.get('UIScene').events.emit('updatePlayerPosition', this.player.x, this.player.y);
     }
 }

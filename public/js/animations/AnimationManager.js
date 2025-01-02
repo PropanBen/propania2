@@ -15,8 +15,8 @@ export default class AnimationManager {
         this.scene.anims.create({
             key: 'idle_up',
             frames: this.scene.anims.generateFrameNumbers('player', { start: this.getFrameIndex(22, 0), end: this.getFrameIndex(22, 1) }),
-            frameRate: 1,  // Geschwindigkeit der Animation
-            repeat: -1      // Endlos wiederholen
+            frameRate: 1, // Geschwindigkeit der Animation
+            repeat: -1    // Endlos wiederholen
         });
 
         this.scene.anims.create({
@@ -42,29 +42,29 @@ export default class AnimationManager {
 
         // Lauf-Animationen
         this.scene.anims.create({
-            key: 'run_up',
-            frames: this.scene.anims.generateFrameNumbers('player', { start: this.getFrameIndex(34, 0), end: this.getFrameIndex(34, 7) }),
+            key: 'walk_up',
+            frames: this.scene.anims.generateFrameNumbers('player', { start: this.getFrameIndex(8, 0), end: this.getFrameIndex(8, 8) }),
             frameRate: 10,
             repeat: -1
         });
 
         this.scene.anims.create({
-            key: 'run_down',
-            frames: this.scene.anims.generateFrameNumbers('player', { start: this.getFrameIndex(36, 0), end: this.getFrameIndex(36, 7) }),
+            key: 'walk_down',
+            frames: this.scene.anims.generateFrameNumbers('player', { start: this.getFrameIndex(10, 0), end: this.getFrameIndex(10, 8) }),
             frameRate: 10,
             repeat: -1
         });
 
         this.scene.anims.create({
-            key: 'run_left',
-            frames: this.scene.anims.generateFrameNumbers('player', { start: this.getFrameIndex(35, 0), end: this.getFrameIndex(35, 7) }),
+            key: 'walk_left',
+            frames: this.scene.anims.generateFrameNumbers('player', { start: this.getFrameIndex(9, 0), end: this.getFrameIndex(9, 8) }),
             frameRate: 10,
             repeat: -1
         });
 
         this.scene.anims.create({
-            key: 'run_right',
-            frames: this.scene.anims.generateFrameNumbers('player', { start: this.getFrameIndex(37, 0), end: this.getFrameIndex(37, 7) }),
+            key: 'walk_right',
+            frames: this.scene.anims.generateFrameNumbers('player', { start: this.getFrameIndex(11, 0), end: this.getFrameIndex(11, 8) }),
             frameRate: 10,
             repeat: -1
         });
@@ -72,7 +72,7 @@ export default class AnimationManager {
 
     // Hilfsfunktion zur Berechnung des Frame-Index
     getFrameIndex(row, column) {
-        const SPRITESHEET_COLUMNS = 13;  // Anzahl der Spalten im Spritesheet
+        const SPRITESHEET_COLUMNS = 13; // Anzahl der Spalten im Spritesheet
         return (row * SPRITESHEET_COLUMNS) + column;
     }
 
@@ -82,16 +82,16 @@ export default class AnimationManager {
             this.lastDirection = direction; // Die aktuelle Richtung speichern
             switch (direction) {
                 case 'up':
-                    this.player.anims.play('run_up', true);
+                    this.player.anims.play('walk_up', true);
                     break;
                 case 'down':
-                    this.player.anims.play('run_down', true);
+                    this.player.anims.play('walk_down', true);
                     break;
                 case 'left':
-                    this.player.anims.play('run_left', true);
+                    this.player.anims.play('walk_left', true);
                     break;
                 case 'right':
-                    this.player.anims.play('run_right', true);
+                    this.player.anims.play('walk_right', true);
                     break;
             }
         } else {
