@@ -40,7 +40,7 @@ export default class AnimationManager {
             repeat: -1
         });
 
-        // Lauf-Animationen
+        // Geh-Animationen
         this.scene.anims.create({
             key: 'walk_up',
             frames: this.scene.anims.generateFrameNumbers('player', { start: this.getFrameIndex(8, 0), end: this.getFrameIndex(8, 8) }),
@@ -68,6 +68,35 @@ export default class AnimationManager {
             frameRate: 10,
             repeat: -1
         });
+
+              // Lauf-Animationen
+              this.scene.anims.create({
+                key: 'run_up',
+                frames: this.scene.anims.generateFrameNumbers('player', { start: this.getFrameIndex(34, 0), end: this.getFrameIndex(34, 7) }),
+                frameRate: 10,
+                repeat: -1
+            });
+    
+            this.scene.anims.create({
+                key: 'run_down',
+                frames: this.scene.anims.generateFrameNumbers('player', { start: this.getFrameIndex(36, 0), end: this.getFrameIndex(36, 7) }),
+                frameRate: 10,
+                repeat: -1
+            });
+    
+            this.scene.anims.create({
+                key: 'run_left',
+                frames: this.scene.anims.generateFrameNumbers('player', { start: this.getFrameIndex(35, 0), end: this.getFrameIndex(35, 7) }),
+                frameRate: 10,
+                repeat: -1
+            });
+    
+            this.scene.anims.create({
+                key: 'run_right',
+                frames: this.scene.anims.generateFrameNumbers('player', { start: this.getFrameIndex(37, 0), end: this.getFrameIndex(37, 7) }),
+                frameRate: 10,
+                repeat: -1
+            });
     }
 
     // Hilfsfunktion zur Berechnung des Frame-Index
@@ -77,39 +106,40 @@ export default class AnimationManager {
     }
 
     // Methode zum Setzen der richtigen Animation basierend auf der Bewegungsrichtung
-    playAnimation(direction, isRunning) {
-        if (isRunning) {
-            this.lastDirection = direction; // Die aktuelle Richtung speichern
-            switch (direction) {
-                case 'up':
-                    this.player.anims.play('walk_up', true);
-                    break;
-                case 'down':
-                    this.player.anims.play('walk_down', true);
-                    break;
-                case 'left':
-                    this.player.anims.play('walk_left', true);
-                    break;
-                case 'right':
-                    this.player.anims.play('walk_right', true);
-                    break;
+    playAnimation(direction, velocity) {
+        const [velocityX, velocityY] = velocity; // Array entpacken: [x, y]
+    
+        // Berechne die effektive Geschwindigkeit für jede Richtung
+        const absVelocityX = Math.abs(velocityX);
+        const absVelocityY = Math.abs(velocityY);
+    
+        // Horizontalbewegung (left, right)
+        if (absVelocityX > absVelocityY) {
+            if (absVelocityX > 80) {
+                this.lastDirection = 'right'; // Für Running
+                this.player.anims.play(velocityX > 0 ? 'run_right' : 'run_left', true);
+            } else if (absVelocityX > 0) {
+                this.lastDirection = 'right'; // Für Walking
+                this.player.anims.play(velocityX > 0 ? 'walk_right' : 'walk_left', true);
+            } else {
+                // Idle für Horizontal
+                this.player.anims.play(this.lastDirection === 'right' ? 'idle_right' : 'idle_left', true);
             }
-        } else {
-            // Wenn der Spieler nicht läuft, die letzte Richtung verwenden
-            switch (this.lastDirection) {
-                case 'up':
-                    this.player.anims.play('idle_up', true);
-                    break;
-                case 'down':
-                    this.player.anims.play('idle_down', true);
-                    break;
-                case 'left':
-                    this.player.anims.play('idle_left', true);
-                    break;
-                case 'right':
-                    this.player.anims.play('idle_right', true);
-                    break;
+        }
+    
+        // Vertikalbewegung (up, down)
+        else {
+            if (absVelocityY > 80) {
+                this.lastDirection = 'down'; // Für Running
+                this.player.anims.play(velocityY > 0 ? 'run_down' : 'run_up', true);
+            } else if (absVelocityY > 0) {
+                this.lastDirection = 'down'; // Für Walking
+                this.player.anims.play(velocityY > 0 ? 'walk_down' : 'walk_up', true);
+            } else {
+                // Idle für Vertikal
+                this.player.anims.play(this.lastDirection === 'down' ? 'idle_down' : 'idle_up', true);
             }
         }
     }
+    
 }

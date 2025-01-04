@@ -9,9 +9,13 @@ const socket = io('http://localhost:3000'); // Verbinde mit dem Server
 // Phaser.js-Konfiguration
 const config = {
   type: Phaser.AUTO,
-  width: 800,
-  height: 600,
+  width: window.innerWidth,
+  height: window.innerHeight,
   parent: 'game-container',
+  scale: {
+    mode: Phaser.Scale.FIT, // Passt das Spiel in den verfügbaren Platz ein
+    autoCenter: Phaser.Scale.CENTER_BOTH, // Zentriert das Spiel
+},
   scene: [MenuScene, GameScene, UIScene, IsoMapScene],
   physics: {
     default: 'arcade',  // Arcade Physics aktivieren
