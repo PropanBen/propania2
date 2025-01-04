@@ -20,8 +20,8 @@ export default class CameraControl {
         this.scene.input.on('pointermove', this.dragCamera, this);
         this.scene.input.keyboard.on('keydown-SPACE', this.toggleCameraFollow, this);
         this.scene.input.on('wheel', this.handleZoom, this);
-        this.scene.input.keyboard.on('keydown-EQUAL', this.zoomIn, this);
-        this.scene.input.keyboard.on('keydown-MINUS', this.zoomOut, this);
+        this.scene.input.keyboard.on('keydown-NUMPAD_ADD', this.zoomIn, this);
+        this.scene.input.keyboard.on('keydown-NUMPAD_SUBTRACT', this.zoomOut, this);
     }
 
     // Starten des Kamera-Ziehens (dragging)
@@ -60,7 +60,7 @@ export default class CameraControl {
 
     // Zoom-Funktionalität mit Maus oder Tasten
     handleZoom(pointer, gameObjects, deltaX, deltaY) {
-        const zoomFactor = deltaY > 0 ? 0.1 : -0.1;
+        const zoomFactor = deltaY < 0 ? 0.1 : -0.1;
         this.adjustZoom(zoomFactor);
     }
 
