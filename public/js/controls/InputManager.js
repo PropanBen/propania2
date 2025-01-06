@@ -3,9 +3,19 @@ export default class InputManager {
         this.scene = scene;
         this.player = player;
         this.cameraControl = cameraControl;
-        this.cursors = this.scene.input.keyboard.createCursorKeys();
-        this.playermovementspeed = 100;
 
+        // Pfeiltasten und WASD-Tasten für Steuerung
+        this.cursors = this.scene.input.keyboard.createCursorKeys();
+        this.keys = this.scene.input.keyboard.addKeys({
+            W: Phaser.Input.Keyboard.KeyCodes.W,
+            A: Phaser.Input.Keyboard.KeyCodes.A,
+            S: Phaser.Input.Keyboard.KeyCodes.S,
+            D: Phaser.Input.Keyboard.KeyCodes.D,
+        });
+
+        this.playermovementspeed = 60;
+        this.playermovementmaxspeed = 100;
+        this.shiftkey = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
 
         // Joystick-Bewegungsdaten initialisieren
         this.joystickForceX = 0;
@@ -18,42 +28,65 @@ export default class InputManager {
         });
 
         // Speichere die letzte Richtung
-        this.lastDirection = 'down';
+        this.lastDirection = 'down'; // Initialwert
     }
 
     handlePlayerMovement() {
         let velocityX = 0;
         let velocityY = 0;
-    
-        // Tastatursteuerung
-        if (this.cursors.left.isDown) velocityX = -this.playermovementspeed;
-        else if (this.cursors.right.isDown) velocityX = this.playermovementspeed;
-    
-        if (this.cursors.up.isDown) velocityY = -this.playermovementspeed;
-        else if (this.cursors.down.isDown) velocityY = this.playermovementspeed;
-    
-        // Joysticksteuerung priorisieren, falls vorhanden
-        if (this.joystickForceX !== 0 || this.joystickForceY !== 0) {
-            velocityX = this.joystickForceX * this.playermovementspeed;
-            velocityY = this.joystickForceY * this.playermovementspeed;
+
+        // Überprüfen, ob die Steuerung durch Joystick erfolgt
+        const isJoystickActive = this.joystickForceX !== 0 || this.joystickForceY !== 0;
+
+        // Tastatursteuerung (Pfeiltasten und WASD)
+        if (!isJoystickActive) {
+            if (this.cursors.left.isDown || this.keys.A.isDown) {
+                velocityX = -this.playermovementspeed;
+                this.lastDirection = 'left'; // Update Richtung basierend auf Tastatur
+            } else if (this.cursors.right.isDown || this.keys.D.isDown) {
+                velocityX = this.playermovementspeed;
+                this.lastDirection = 'right'; // Update Richtung basierend auf Tastatur
+            }
+
+            if (this.cursors.up.isDown || this.keys.W.isDown) {
+                velocityY = -this.playermovementspeed;
+                this.lastDirection = 'up'; // Update Richtung basierend auf Tastatur
+            } else if (this.cursors.down.isDown || this.keys.S.isDown) {
+                velocityY = this.playermovementspeed;
+                this.lastDirection = 'down'; // Update Richtung basierend auf Tastatur
+            }
         }
-    
+
+        // Sprinten
+        if (this.shiftkey.isDown) {
+            this.playermovementspeed = 100;
+        } else {
+            this.playermovementspeed = 60;
+        }
+
+        // Joysticksteuerung priorisieren, falls vorhanden
+        if (isJoystickActive) {
+            velocityX = this.joystickForceX * this.playermovementmaxspeed;
+            velocityY = this.joystickForceY * this.playermovementmaxspeed;
+
+            // Aktualisiere die letzte Richtung basierend auf der Joystick-Bewegung
+            if (Math.abs(this.joystickForceX) > Math.abs(this.joystickForceY)) {
+                this.lastDirection = this.joystickForceX > 0 ? 'right' : 'left';
+            } else {
+                this.lastDirection = this.joystickForceY > 0 ? 'down' : 'up';
+            }
+        }
+
         // Spielerbewegung anwenden
         this.player.setVelocityX(velocityX);
         this.player.setVelocityY(velocityY);
-    
-        // Aktualisiere die letzte Richtung basierend auf der Bewegung
-        if (velocityX > 0) this.lastDirection = 'right';
-        else if (velocityX < 0) this.lastDirection = 'left';
-        else if (velocityY > 0) this.lastDirection = 'down';
-        else if (velocityY < 0) this.lastDirection = 'up';
-    
+
+        // Event an UIScene senden
         this.scene.scene.get('UIScene').events.emit('updateVelocity', velocityX, velocityY);
-    
+
         // Rückgabe der Geschwindigkeiten als Array
         return [velocityX, velocityY];
     }
-    
 
     getDirection() {
         // Priorisiere Joystick-Eingaben
@@ -66,10 +99,12 @@ export default class InputManager {
         }
 
         // Fallback auf Tastatursteuerung
-        if (this.cursors.left.isDown) return 'left';
-        if (this.cursors.right.isDown) return 'right';
-        if (this.cursors.up.isDown) return 'up';
-        if (this.cursors.down.isDown) return 'down';
+        if (this.cursors.left.isDown || this.keys.A.isDown) return 'left';
+        if (this.cursors.right.isDown || this.keys.D.isDown) return 'right';
+        if (this.cursors.up.isDown || this.keys.W.isDown) return 'up';
+        if (this.cursors.down.isDown || this.keys.S.isDown) return 'down';
+     
+        this.scene.scene.get('UIScene').events.emit('lastDirection',this.lastDirection);
 
         // Standardwert
         return this.lastDirection; // Zuletzt verwendete Richtung

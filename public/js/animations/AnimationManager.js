@@ -3,9 +3,6 @@ export default class AnimationManager {
         this.scene = scene;
         this.player = player;
 
-        // Die letzte Richtung des Spielers speichern
-        this.lastDirection = 'down'; // Standardwert, falls der Spieler zu Beginn steht
-
         // Animationen für den Charakter initialisieren
         this.createAnimations();
     }
@@ -72,7 +69,7 @@ export default class AnimationManager {
               // Lauf-Animationen
               this.scene.anims.create({
                 key: 'run_up',
-                frames: this.scene.anims.generateFrameNumbers('player', { start: this.getFrameIndex(34, 0), end: this.getFrameIndex(34, 7) }),
+                frames:this.scene.anims.generateFrameNumbers('player', { start: this.getFrameIndex(34, 0), end: this.getFrameIndex(34, 7) }),
                 frameRate: 10,
                 repeat: -1
             });
@@ -107,39 +104,29 @@ export default class AnimationManager {
 
     // Methode zum Setzen der richtigen Animation basierend auf der Bewegungsrichtung
     playAnimation(direction, velocity) {
-        const [velocityX, velocityY] = velocity; // Array entpacken: [x, y]
+        const [velocityX, velocityY] = velocity;
+        console.log(velocityX, velocityY);
     
-        // Berechne die effektive Geschwindigkeit für jede Richtung
-        const absVelocityX = Math.abs(velocityX);
-        const absVelocityY = Math.abs(velocityY);
-    
-        // Horizontalbewegung (left, right)
-        if (absVelocityX > absVelocityY) {
-            if (absVelocityX > 80) {
-                this.lastDirection = 'right'; // Für Running
-                this.player.anims.play(velocityX > 0 ? 'run_right' : 'run_left', true);
-            } else if (absVelocityX > 0) {
-                this.lastDirection = 'right'; // Für Walking
-                this.player.anims.play(velocityX > 0 ? 'walk_right' : 'walk_left', true);
-            } else {
-                // Idle für Horizontal
-                this.player.anims.play(this.lastDirection === 'right' ? 'idle_right' : 'idle_left', true);
-            }
+        // Bestimme die größere Geschwindigkeit der beiden Komponenten (für diagonale Bewegungen)
+        const maxSpeed = Math.max(Math.abs(velocityX), Math.abs(velocityY));
+        
+        // Bestimme den Walk-State basierend auf der maximalen Geschwindigkeit
+        let walkState;
+        if (maxSpeed === 0) {
+            walkState = 'idle';    // Wenn die Geschwindigkeit 0 ist, "idle"
+        } else if (maxSpeed <= 60) {
+            walkState = 'walk';    // Wenn die Geschwindigkeit zwischen 1 und 60 ist, "walk"
+        } else {
+            walkState = 'run';     // Wenn die Geschwindigkeit über 60 ist, "run"
         }
+        
+        console.log(walkState);
     
-        // Vertikalbewegung (up, down)
-        else {
-            if (absVelocityY > 80) {
-                this.lastDirection = 'down'; // Für Running
-                this.player.anims.play(velocityY > 0 ? 'run_down' : 'run_up', true);
-            } else if (absVelocityY > 0) {
-                this.lastDirection = 'down'; // Für Walking
-                this.player.anims.play(velocityY > 0 ? 'walk_down' : 'walk_up', true);
-            } else {
-                // Idle für Vertikal
-                this.player.anims.play(this.lastDirection === 'down' ? 'idle_down' : 'idle_up', true);
-            }
-        }
+        // Der Animation-Name wird durch die Richtung und den Zustand bestimmt
+        const animationName = `${walkState}_${direction}`;
+        this.player.anims.play(animationName, true);
     }
+    
+    
     
 }

@@ -56,7 +56,6 @@ export default class GameScene extends Phaser.Scene {
         // Spielerbewegung
         const Velocity= this.inputManager.handlePlayerMovement();
         const direction = this.inputManager.getDirection(); // Verwende getDirection aus InputManager
-
         this.animationManager.playAnimation(direction, Velocity);
 
         // Kamera aktualisieren
