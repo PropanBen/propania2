@@ -105,7 +105,6 @@ export default class AnimationManager {
     // Methode zum Setzen der richtigen Animation basierend auf der Bewegungsrichtung
     playAnimation(direction, velocity) {
         const [velocityX, velocityY] = velocity;
-        console.log(velocityX, velocityY);
     
         // Bestimme die größere Geschwindigkeit der beiden Komponenten (für diagonale Bewegungen)
         const maxSpeed = Math.max(Math.abs(velocityX), Math.abs(velocityY));
@@ -119,8 +118,7 @@ export default class AnimationManager {
         } else {
             walkState = 'run';     // Wenn die Geschwindigkeit über 60 ist, "run"
         }
-        
-        console.log(walkState);
+
     
         // Der Animation-Name wird durch die Richtung und den Zustand bestimmt
         const animationName = `${walkState}_${direction}`;
