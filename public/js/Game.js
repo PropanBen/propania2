@@ -4,7 +4,7 @@ import UIScene from './scenes/UIScene.js';
 import IsoMapScene from './scenes/IsoMapScene.js'; 
 
 // Hier kannst du direkt den globalen `io`-Namespace von Socket.IO verwenden
-const socket = io('http://localhost:3000'); // Verbinde mit dem Server
+const socket = io('http://localhost:3001'); // Verbinde mit dem Server
 
 // Phaser.js-Konfiguration
 const config = {
