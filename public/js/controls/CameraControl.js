@@ -74,7 +74,7 @@ export default class CameraControl {
 
     // Zoom-Level anpassen
     adjustZoom(zoomDelta) {
-        this.cameraZoom = Phaser.Math.Clamp(this.cameraZoom + zoomDelta, 0.1, 3); // Begrenzung des Zoom-Levels
+        this.cameraZoom = Phaser.Math.Clamp(this.cameraZoom + zoomDelta, 0.1, 5); // Begrenzung des Zoom-Levels
         this.scene.cameras.main.setZoom(this.cameraZoom);
     }
 

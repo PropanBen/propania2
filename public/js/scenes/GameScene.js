@@ -11,6 +11,7 @@ export default class GameScene extends Phaser.Scene {
         this.animationManager = null;
         this.actionzoneOffset = null;
         this.blueRectangle = null;
+        this.item = null;
     }
 
     preload() {
@@ -20,6 +21,7 @@ export default class GameScene extends Phaser.Scene {
         this.load.image('treeleaves', 'assets/map/images/TreeLeaves.png');
         this.load.image('trees', 'assets/map/images/TreeStump.png');
         this.load.image('stone', 'assets/map/images/stone.png');
+        this.load.image('item', 'assets/images/pickaxe2.png');
         this.load.spritesheet('player', 'assets/players/Player_Template.png', {
             frameWidth: 64,
             frameHeight: 64,
@@ -54,6 +56,16 @@ export default class GameScene extends Phaser.Scene {
         this.physics.add.existing(this.blueRectangle);
         this.blueRectangle.body.setImmovable(true);
         this.blueRectangle.setDepth(10);
+
+        this.item = this.physics.add.sprite(-48,952, 'item').setOrigin(0.5, 0.5).setScale(0.5);
+        this.physics.world.enable(this.item);
+        this.item.body.setSize(32, 32);
+        this.item .setDepth(9);
+        this.item.body.setImmovable(true);
+
+        this.physics.add.collider(this.player, this.item, this.handlePlayerItemCollision, null, this);
+
+
 
         // Karte erstellen
         const map = this.make.tilemap({ key: 'map' });
@@ -115,5 +127,6 @@ export default class GameScene extends Phaser.Scene {
 
     handleactionzoneCollision(zone, obstacle) {
         console.log('Zone hat ein Hindernis berührt!');
+        obstacle.setAlpha(0.5);
     }
 }
