@@ -1,18 +1,22 @@
 {
-  "name": "propania2",
-  "version": "1.0.0",
-  "description": "Isometric Multiplayer Browser Game",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "PropanBen",
-  "license": "ISC",
-  "dependencies": {
-    "cors": "^2.8.5",
-    "express": "^4.21.2",
-    "phaser": "^3.87.0",
-    "socket.io": "^4.8.1",
-    "socket.io-client": "^4.8.1"
-  }
+	"name": "propania2",
+	"version": "1.0.0",
+	"description": "Isometric Multiplayer Browser Game",
+	"main": "index.js",
+	"type": "module",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"lint": "eslint .",
+		"start:backend": "cd backend && npm run start",
+		"start:frontend": "cd frontend && npm run start",
+		"install:all": "npm i && cd frontend && npm i && cd ../backend && npm i"
+	},
+	"author": "PropanBen",
+	"license": "ISC",
+	"devDependencies": {
+		"eslint": "^9.18.0",
+		"eslint-config-prettier": "^10.0.1",
+		"eslint-plugin-prettier": "^5.2.2",
+		"prettier": "^3.4.2"
+	}
 }
