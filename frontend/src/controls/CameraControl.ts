@@ -1,15 +1,25 @@
 import Phaser from 'phaser';
+import type { Vector2D } from 'src/types/direction.enum';
 
 // CameraControl.js
 export default class CameraControl {
-	constructor(scene, player) {
+	private scene: Phaser.Scene;
+	private player: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
+	private isCameraFollowing: boolean;
+	private cameraZoom: number;
+	private dragging: boolean;
+	private startDrag: Vector2D;
+
+	constructor(
+		scene: Phaser.Scene,
+		player: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody
+	) {
 		this.scene = scene;
 		this.player = player;
 		this.isCameraFollowing = true; // Kamera folgt dem Spieler standardmäßig
 		this.cameraZoom = 3; // Initialer Zoom-Level
 		this.dragging = false; // Steuerung für Kamera-Ziehen
-		this.startDragX = 0;
-		this.startDragY = 0;
+		this.startDrag = { x: 0, y: 0 };
 
 		// Kamera folgt dem Spieler zu Beginn
 		this.scene.cameras.main.startFollow(this.player);
@@ -17,24 +27,27 @@ export default class CameraControl {
 		this.scene.cameras.main.setZoom(this.cameraZoom);
 
 		// Ereignis-Listener für Maus und Tasten
-		this.scene.input.on('pointerdown', this.startDrag, this);
+		this.scene.input.on('pointerdown', this.startDragging, this);
 		this.scene.input.on('pointerup', this.stopDrag, this);
 		this.scene.input.on('pointermove', this.dragCamera, this);
-		this.scene.input.keyboard.on(
+		this.scene.input.keyboard!.on(
 			'keydown-SPACE',
 			this.toggleCameraFollow,
 			this
 		);
 		this.scene.input.on('wheel', this.handleZoom, this);
-		this.scene.input.keyboard.on('keydown-NUMPAD_ADD', this.zoomIn, this);
-		this.scene.input.keyboard.on('keydown-NUMPAD_SUBTRACT', this.zoomOut, this);
+		this.scene.input.keyboard!.on('keydown-NUMPAD_ADD', this.zoomIn, this);
+		this.scene.input.keyboard!.on(
+			'keydown-NUMPAD_SUBTRACT',
+			this.zoomOut,
+			this
+		);
 	}
 
 	// Starten des Kamera-Ziehens (dragging)
-	startDrag(pointer) {
+	startDragging(pointer: Phaser.Input.Pointer) {
 		this.dragging = true;
-		this.startDragX = pointer.worldX;
-		this.startDragY = pointer.worldY;
+		this.startDrag = { x: pointer.worldX, y: pointer.worldY };
 	}
 
 	// Stoppen des Kamera-Ziehens (dragging)
@@ -43,14 +56,13 @@ export default class CameraControl {
 	}
 
 	// Kamera verschieben, wenn sie gezogen wird
-	dragCamera(pointer) {
+	dragCamera(pointer: Phaser.Input.Pointer) {
 		if (this.dragging && !this.isCameraFollowing) {
-			const deltaX = this.startDragX - pointer.worldX;
-			const deltaY = this.startDragY - pointer.worldY;
+			const deltaX = this.startDrag.x - pointer.worldX;
+			const deltaY = this.startDrag.y - pointer.worldY;
 			this.scene.cameras.main.scrollX += deltaX;
 			this.scene.cameras.main.scrollY += deltaY;
-			this.startDragX = pointer.worldX;
-			this.startDragY = pointer.worldY;
+			this.startDrag = { x: pointer.worldX, y: pointer.worldY };
 		}
 	}
 
@@ -65,7 +77,12 @@ export default class CameraControl {
 	}
 
 	// Zoom-Funktionalität mit Maus oder Tasten
-	handleZoom(pointer, gameObjects, deltaX, deltaY) {
+	handleZoom(
+		pointer: unknown,
+		gameObjects: unknown,
+		deltaX: number,
+		deltaY: number
+	) {
 		const zoomFactor = deltaY < 0 ? 0.1 : -0.1;
 		this.adjustZoom(zoomFactor);
 	}
@@ -79,7 +96,7 @@ export default class CameraControl {
 	}
 
 	// Zoom-Level anpassen
-	adjustZoom(zoomDelta) {
+	adjustZoom(zoomDelta: number) {
 		this.cameraZoom = Phaser.Math.Clamp(this.cameraZoom + zoomDelta, 0.1, 5); // Begrenzung des Zoom-Levels
 		this.scene.cameras.main.setZoom(this.cameraZoom);
 	}

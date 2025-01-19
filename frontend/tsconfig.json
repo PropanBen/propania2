@@ -1,0 +1,27 @@
+{
+	"compilerOptions": {
+		"target": "ES2020", // Modernes JavaScript
+		"module": "ESNext", // Für Vite und moderne Bundler
+		"moduleResolution": "Node", // Modulauflösung wie bei Node.js
+		"strict": true, // Aktiviert strikte Typüberprüfung
+		"esModuleInterop": true, // Bessere Unterstützung für CommonJS-Module
+		"skipLibCheck": true, // Beschleunigt die TypeScript-Kompilierung
+		"forceConsistentCasingInFileNames": true, // Fehler bei unterschiedlicher Groß-/Kleinschreibung
+		"outDir": "./dist", // Ausgabeordner
+		"baseUrl": ".",
+		"paths": {
+			"@shared/*": ["types/*"]
+		},
+		"lib": ["es6", "dom", "dom.iterable", "scripthost"],
+		"typeRoots": ["./node_modules/phaser/types"],
+		"types": ["phaser"],
+		"allowImportingTsExtensions": true,
+		"noEmit": true
+	},
+	"include": ["src/**/*.ts", "vite.config.ts"], // Nimmt alle TypeScript-Dateien im src-Ordner
+	"exclude": ["node_modules", "dist"] // Schließt generierte und externe Dateien aus
+
+	/**
+
+	*/
+}
