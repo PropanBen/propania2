@@ -28,7 +28,6 @@ export default class MenuScene extends Phaser.Scene {
 		this.add
 			.text(300, 250, 'Klicke, um zu spielen!', {
 				fontSize: '32px',
-				fill: '#000000',
 			})
 			.setInteractive()
 			.on('pointerdown', () => {
@@ -39,7 +38,6 @@ export default class MenuScene extends Phaser.Scene {
 		const messageText = this.add
 			.text(400, 50, '', {
 				font: '32px Arial',
-				fill: '#000000',
 				align: 'center',
 			})
 			.setOrigin(0.5);
