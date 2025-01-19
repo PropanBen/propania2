@@ -87,9 +87,11 @@ export default class GameScene extends Phaser.Scene {
 		this.spriteObjects.push(this.player!);
 
 		this.blueRectangle = this.add.rectangle(-150, 900, 20, 20, 0x0000ff, 0.5);
-		this.physics.add.existing(this.blueRectangle);
+		this.physics.add.existing(this.blueRectangle, true);
 		// this.blueRectangle.body.setImmovable(true);
 		this.blueRectangle.setDepth(10);
+
+		this.physics.add.collider(this.player, this.blueRectangle);
 
 		this.item = this.physics.add
 			.sprite(-48, 952, 'item')
