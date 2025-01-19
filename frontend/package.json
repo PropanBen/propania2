@@ -1,5 +1,5 @@
 {
-	"name": "myclient",
+	"name": "propania2-client",
 	"version": "1.0.0",
 	"main": "index.js",
 	"type": "module",
@@ -19,6 +19,7 @@
 	},
 	"devDependencies": {
 		"@types/node": "^22.10.7",
+		"typescript": "^5.7.3",
 		"vite": "^6.0.7"
 	}
 }
