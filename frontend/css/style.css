@@ -1,21 +1,21 @@
 /* Sicherstellen, dass body und html den gesamten Bildschirm ausfüllen */
-body, html {
-  width: 100%;
-  height: 100%;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    justify-content: center; /* Horizontal zentrieren */
-    align-items: center; /* Vertikal zentrieren */
-    background-color: #87CEEB; /* Optionale Hintergrundfarbe */
-  }
-  
-  /* Der Container für das Phaser-Spiel */
-  #game-container {
-    display: block;
-    width: 100%;
-    height: 100%;
-    margin: 0 auto;
-   /* border: 2px solid #000; /* Optional: ein Rand um den Container für mehr Sichtbarkeit */
-  }
-  
+body,
+html {
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	justify-content: center; /* Horizontal zentrieren */
+	align-items: center; /* Vertikal zentrieren */
+	background-color: #87ceeb; /* Optionale Hintergrundfarbe */
+}
+
+/* Der Container für das Phaser-Spiel */
+#game-container {
+	display: block;
+	width: 100%;
+	height: 100%;
+	margin: 0 auto;
+	/* border: 2px solid #000; /* Optional: ein Rand um den Container für mehr Sichtbarkeit */
+}

@@ -7,6 +7,7 @@
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
 		"lint": "eslint .",
+		"format": "prettier --write \"**/*.{js,ts,css,scss,html}\"",
 		"start:backend": "cd backend && npm run start",
 		"start:frontend": "cd frontend && npm run dev",
 		"install:all": "npm i && cd frontend && npm i && cd ../backend && npm i"
