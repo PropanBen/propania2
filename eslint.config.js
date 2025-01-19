@@ -77,6 +77,7 @@ export default [
 			], // Warn about unused variables, ignore _ prefix
 			'@typescript-eslint/consistent-type-imports': 'warn', // Prefer consistent type imports
 			'@typescript-eslint/no-explicit-any': 'warn',
+			'@typescript-eslint/no-unsafe-assignment': 'error',
 			eqeqeq: 'warn', // Enforce === over ==
 			'no-console': 'warn', // Discourage console.log
 			'no-redeclare': 'error', // Prevent variable redeclaration

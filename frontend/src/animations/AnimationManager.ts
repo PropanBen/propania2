@@ -147,7 +147,7 @@ export default class AnimationManager {
 	}
 
 	// Methode zum Setzen der richtigen Animation basierend auf der Bewegungsrichtung
-	playAnimation(direction: Direction, velocity: any) {
+	playAnimation(direction: Direction, velocity: number[]) {
 		const [velocityX, velocityY] = velocity;
 
 		// Bestimme die größere Geschwindigkeit der beiden Komponenten (für diagonale Bewegungen)
