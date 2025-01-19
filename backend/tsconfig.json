@@ -1,0 +1,18 @@
+{
+	"compilerOptions": {
+		"target": "ESNext",
+		"module": "ESNext",
+		"moduleResolution": "Node",
+		"strict": true,
+		"esModuleInterop": true,
+		"outDir": "dist",
+		"baseUrl": ".",
+		"paths": {
+			"@backend/*": ["./*"],
+			"@shared/*": ["types/*"]
+		},
+		"allowJs": false
+	},
+	"include": ["server.ts", "backend/**/*.ts"],
+	"exclude": ["node_modules"]
+}

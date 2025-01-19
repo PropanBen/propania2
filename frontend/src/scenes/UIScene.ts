@@ -1,6 +1,15 @@
 import Phaser from 'phaser';
+import type { Direction } from '../types/direction.enum';
 
 export default class UIScene extends Phaser.Scene {
+	private uiText?: Phaser.GameObjects.Text;
+	private velocityText?: Phaser.GameObjects.Text;
+	private lastDirection?: Phaser.GameObjects.Text;
+	private isDragging?: boolean;
+	private pointer?: Phaser.Input.Pointer;
+	private joystickBase?: Phaser.GameObjects.Arc;
+	private joystickStick?: Phaser.GameObjects.Arc;
+
 	constructor() {
 		super({ key: 'UIScene' });
 	}
@@ -44,7 +53,7 @@ export default class UIScene extends Phaser.Scene {
 		// Joystick-Eingabesteuerung
 		this.isDragging = false;
 
-		this.input.on('pointerdown', (pointer) => {
+		this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
 			const distance = Phaser.Math.Distance.Between(
 				pointer.x,
 				pointer.y,
@@ -56,7 +65,7 @@ export default class UIScene extends Phaser.Scene {
 			}
 		});
 
-		this.input.on('pointermove', (pointer) => {
+		this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
 			if (this.isDragging) {
 				const angle = Phaser.Math.Angle.Between(
 					joystickX,
@@ -78,7 +87,7 @@ export default class UIScene extends Phaser.Scene {
 				const stickX = joystickX + Math.cos(angle) * distance;
 				const stickY = joystickY + Math.sin(angle) * distance;
 
-				this.joystickStick.setPosition(stickX, stickY);
+				this.joystickStick!.setPosition(stickX, stickY);
 
 				// Normalisierte Richtung für Bewegung
 				const normalizedX = (stickX - joystickX) / joystickRadius;
@@ -91,7 +100,7 @@ export default class UIScene extends Phaser.Scene {
 
 		this.input.on('pointerup', () => {
 			this.isDragging = false;
-			this.joystickStick.setPosition(joystickX, joystickY);
+			this.joystickStick!.setPosition(joystickX, joystickY);
 
 			// Bewegungsdaten zurücksetzen
 			this.events.emit('joystickMove', 0, 0);
@@ -103,20 +112,20 @@ export default class UIScene extends Phaser.Scene {
 		this.events.on('lastDirection', this.updatelastDirection, this);
 	}
 
-	updatePlayerPosition(playerX, playerY) {
+	updatePlayerPosition(playerX: number, playerY: number) {
 		// Aktualisiere den Text mit der aktuellen Spielerposition
-		this.uiText.setText(
+		this.uiText!.setText(
 			`Player Position: (${Math.round(playerX)}, ${Math.round(playerY)})`
 		);
 	}
 
-	updateVelocity(velocityX, velocityY) {
-		this.velocityText.setText(
+	updateVelocity(velocityX: number, velocityY: number) {
+		this.velocityText!.setText(
 			`Velocity: (${Math.round(velocityX)}, ${Math.round(velocityY)}})`
 		);
 	}
 
-	updatelastDirection(lastDirection) {
-		this.lastDirection.setText(`lastDirection: ${lastDirection}`);
+	updatelastDirection(lastDirection: Direction) {
+		this.lastDirection!.setText(`lastDirection: ${lastDirection}`);
 	}
 }

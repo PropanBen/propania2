@@ -1,63 +1,101 @@
-import prettier from 'eslint-config-prettier';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Definiere __dirname und __filename manuell für ES-Module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+import prettierConfig from 'eslint-config-prettier';
+import typescriptParser from '@typescript-eslint/parser';
+import tsPlugin from '@typescript-eslint/eslint-plugin';
 
 export default [
+	// Konfiguration für JavaScript-Dateien
 	{
-		files: ['**/*.js', '**/*.ts'], // Dateitypen, die geprüft werden
+		files: ['**/*.js'], // Nur JavaScript-Dateien
 		languageOptions: {
 			ecmaVersion: 'latest',
 			sourceType: 'module',
 			globals: {
-				console: 'readonly', // console als readonly definieren
-				process: 'readonly', // process ist in Node.js global verfügbar
-				__dirname: 'readonly', // __dirname ist in Node.js global verfügbar
-				__filename: 'readonly', // __filename ist in Node.js global verfügbar
-				module: 'readonly', // module ist in Node.js global verfügbar
-				window: 'readonly', // window ist im Browser global verfügbar
-				document: 'readonly', // document ist im Browser global verfügbar
-				localStorage: 'readonly', // localStorage ist im Browser global verfügbar
-				fetch: 'readonly', // fetch ist im modernen Browser global verfügbar
-				alert: 'readonly', // alert ist im Browser global verfügbar
-				describe: 'readonly', // Jest beschreibt globale Funktion
-				it: 'readonly', // Jest testet globale Funktion
-				expect: 'readonly', // Jest verwendet expect global
-				beforeEach: 'readonly', // Jest Setup-Funktion
-				afterEach: 'readonly', // Jest Teardown-Funktion
-				BigInt: 'readonly', // BigInt in modernen JavaScript-Umgebungen
-				globalThis: 'readonly', // globalThis ist in modernen JavaScript-Umgebungen verfügbar
-				URL: 'readonly',
+				console: 'readonly',
+				process: 'readonly',
+				__dirname: 'readonly',
+				__filename: 'readonly',
+				module: 'readonly',
+				window: 'readonly',
+				document: 'readonly',
+				localStorage: 'readonly',
+				fetch: 'readonly',
+				alert: 'readonly',
 			},
 		},
 		plugins: {
-			prettier,
+			prettier: prettierConfig,
 		},
 		rules: {
-			...prettier.rules, // Deaktiviert Konflikte mit Prettier
-			'no-unused-vars': 'warn', // Warnung für ungenutzte Variablen
-			eqeqeq: 'warn', // Warnung bei Verwendung von == anstelle von ===
-			'no-undef': 'error', // Verhindert die Nutzung nicht definierter Variablen.
-			'no-console': 'warn', // Vermeidet den Einsatz von console.log (kann auf warn gestellt werden).
-			'no-redeclare': 'error', // Verhindert die erneute Deklaration von Variablen.
-			curly: 'warn', // Erzwingt geschweifte Klammern für Kontrollstrukturen wie if oder while.
-			'consistent-return': 'warn', // Erzwingt, dass alle Pfade einer Funktion einen Rückgabewert haben.
-			'no-shadow': 'error', // Verhindert das Überschreiben von Variablen im äußeren Geltungsbereich.
-			'no-fallthrough': 'warn', // Warnt bei fehlendem break in switch-Anweisungen.
-			'default-case': 'warn', // Erzwingt einen Standardfall (default) in switch-Anweisungen.
-			'no-empty': 'warn', // Verhindert leere Codeblöcke.
-			'no-eval': 'error',
-			'no-implied-eval': 'error',
-			'no-alert': 'warn',
-			'prefer-const': 'error',
-			'arrow-spacing': [
-				'warn', // Kann auch "error" sein, wenn du es strenger machen möchtest
-				{
-					before: true, // Leerzeichen vor dem Pfeil
-					after: true, // Leerzeichen nach dem Pfeil
-				},
-			],
-			'no-var': 'error',
-			'object-shorthand': 'warn',
+			...prettierConfig.rules, // Prettier-Regeln
+			eqeqeq: 'warn', // Enforce === over ==
+			'no-console': 'warn', // Discourage console.log
+			'no-redeclare': 'error', // Prevent variable redeclaration
+			curly: 'warn', // Enforce braces in control structures
+			'consistent-return': 'warn', // Enforce consistent return values
+			'no-shadow': 'error', // Prevent shadowing of variables
+			'no-fallthrough': 'warn', // Warn about missing breaks in switch
+			'default-case': 'warn', // Require default case in switch
+			'no-empty': 'warn', // Warn on empty blocks
+			'no-eval': 'error', // Disallow eval
+			'no-implied-eval': 'error', // Disallow implied eval
+			'no-alert': 'warn', // Discourage alert usage
+			'prefer-const': 'error', // Prefer const for variables
+			'arrow-spacing': ['warn', { before: true, after: true }], // Enforce spacing in arrow functions
+			'no-var': 'error', // Disallow var
+			'object-shorthand': 'warn', // Prefer object shorthand
 			'prefer-template': 'error',
 		},
-		ignores: ['node_modules/'],
+		ignores: ['node_modules/', 'dist/'], // Ignorierte Ordner
+	},
+
+	// Konfiguration für TypeScript-Dateien
+	{
+		files: ['**/*.ts'], // Nur TypeScript-Dateien
+		languageOptions: {
+			parser: typescriptParser,
+			parserOptions: {
+				tsconfigRootDir: __dirname,
+				project: ['./backend/tsconfig.json', './frontend/tsconfig.json'], // Pfade zu den tsconfig.json
+			},
+		},
+		plugins: {
+			prettier: prettierConfig,
+			'@typescript-eslint': tsPlugin,
+		},
+		rules: {
+			...prettierConfig.rules, // Prettier-Regeln
+			'@typescript-eslint/no-unused-vars': [
+				'warn',
+				{ argsIgnorePattern: '^_' },
+			], // Warn about unused variables, ignore _ prefix
+			'@typescript-eslint/consistent-type-imports': 'warn', // Prefer consistent type imports
+			'@typescript-eslint/no-explicit-any': 'warn',
+			'@typescript-eslint/no-unsafe-assignment': 'error',
+			eqeqeq: 'warn', // Enforce === over ==
+			'no-console': 'warn', // Discourage console.log
+			'no-redeclare': 'error', // Prevent variable redeclaration
+			curly: 'warn', // Enforce braces in control structures
+			'consistent-return': 'warn', // Enforce consistent return values
+			'no-shadow': 'error', // Prevent shadowing of variables
+			'no-fallthrough': 'warn', // Warn about missing breaks in switch
+			'default-case': 'warn', // Require default case in switch
+			'no-empty': 'warn', // Warn on empty blocks
+			'no-eval': 'error', // Disallow eval
+			'no-implied-eval': 'error', // Disallow implied eval
+			'no-alert': 'warn', // Discourage alert usage
+			'prefer-const': 'error', // Prefer const for variables
+			'arrow-spacing': ['warn', { before: true, after: true }], // Enforce spacing in arrow functions
+			'no-var': 'error', // Disallow var
+			'object-shorthand': 'warn', // Prefer object shorthand
+			'prefer-template': 'error',
+		},
+		ignores: ['node_modules/', 'dist/'], // Ignorierte Ordner
 	},
 ];

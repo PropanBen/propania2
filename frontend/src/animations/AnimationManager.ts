@@ -1,5 +1,13 @@
+import type { Direction } from 'src/types/direction.enum';
+
 export default class AnimationManager {
-	constructor(scene, player) {
+	private scene: Phaser.Scene;
+	private player: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
+
+	constructor(
+		scene: Phaser.Scene,
+		player: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody
+	) {
 		this.scene = scene;
 		this.player = player;
 
@@ -133,13 +141,13 @@ export default class AnimationManager {
 	}
 
 	// Hilfsfunktion zur Berechnung des Frame-Index
-	getFrameIndex(row, column) {
+	getFrameIndex(row: number, column: number) {
 		const SPRITESHEET_COLUMNS = 13; // Anzahl der Spalten im Spritesheet
 		return row * SPRITESHEET_COLUMNS + column;
 	}
 
 	// Methode zum Setzen der richtigen Animation basierend auf der Bewegungsrichtung
-	playAnimation(direction, velocity) {
+	playAnimation(direction: Direction, velocity: number[]) {
 		const [velocityX, velocityY] = velocity;
 
 		// Bestimme die größere Geschwindigkeit der beiden Komponenten (für diagonale Bewegungen)
