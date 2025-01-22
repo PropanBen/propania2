@@ -11,7 +11,7 @@ export default class MenuScene extends Phaser.Scene {
 	}
 
 	create() {
-		const socket = io('http://localhost:3000');
+		const socket = io('http://localhost:3001');
 		// Hintergrundbild hinzufügen
 		const bg = this.add.image(0, 0, 'sky').setOrigin(0, 0);
 

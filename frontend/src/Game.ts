@@ -8,7 +8,7 @@ import type { Types } from 'phaser';
 import { Game, AUTO, Scale } from 'phaser';
 
 // Hier kannst du direkt den globalen `io`-Namespace von Socket.IO verwenden
-const socket = io('http://localhost:3000'); // Verbinde mit dem Server
+const socket = io('http://localhost:3001'); // Verbinde mit dem Server
 
 // Phaser.js-Konfiguration
 const config: Types.Core.GameConfig = {
