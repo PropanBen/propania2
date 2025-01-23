@@ -48,7 +48,7 @@ app.post('/register', async (req, res) => {
 	}
 
 	try {
-		const hashedPassword = await bcrypt.hash(password, 10); // Passwort hashen
+		const hashedPassword = (await bcrypt.hash(password, 10)) as string; // Passwort hashen
 
 		const conn = await pool.getConnection();
 		const query = `INSERT INTO account (email, password, created_at) VALUES (?, ?, NOW())`;
@@ -75,14 +75,17 @@ app.post('/login', async (req: Request, res: Response) => {
 		try {
 			const query = `SELECT * FROM account WHERE email = ?`;
 			const rows: { id: number; email: string; password: string }[] =
-				await conn.query(query, [email]);
+				(await conn.query(query, [email])) as [];
 
 			if (rows.length === 0) {
 				res.status(401).json({ message: 'Ungültige Anmeldedaten!' });
 			}
 
 			const user = rows[0];
-			const isPasswordValid = await bcrypt.compare(password, user.password);
+			const isPasswordValid = (await bcrypt.compare(
+				password,
+				user.password
+			)) as boolean;
 
 			if (!isPasswordValid) {
 				res.status(401).json({ message: 'Ungültige Anmeldedaten!' });
@@ -94,7 +97,7 @@ app.post('/login', async (req: Request, res: Response) => {
 				{
 					expiresIn: '1h',
 				}
-			);
+			) as string;
 
 			res.status(200).json({ message: 'Login erfolgreich!', token });
 		} finally {
