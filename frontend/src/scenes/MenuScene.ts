@@ -50,6 +50,7 @@ export default class MenuScene extends Phaser.Scene {
 		// E-Mail-Eingabefeld erstellen und zentrieren
 		this.emailInput = document.createElement('input');
 		this.emailInput.type = 'email';
+		this.emailInput.autocomplete = 'email';
 		this.emailInput.placeholder = 'E-Mail-Adresse';
 		this.emailInput.style.position = 'absolute';
 		this.emailInput.style.left = `${centerX - inputWidth / 2}px`;
@@ -62,6 +63,7 @@ export default class MenuScene extends Phaser.Scene {
 		// Passwort-Eingabefeld erstellen und zentrieren
 		this.passwordInput = document.createElement('input');
 		this.passwordInput.type = 'password';
+		this.passwordInput.autocomplete = 'current-password';
 		this.passwordInput.placeholder = 'Passwort';
 		this.passwordInput.style.position = 'absolute';
 		this.passwordInput.style.left = `${centerX - inputWidth / 2}px`;
@@ -82,6 +84,13 @@ export default class MenuScene extends Phaser.Scene {
 			})
 			.setInteractive()
 			.on('pointerdown', () => this.handleLogin());
+
+		const registerButton = this.add
+			.text(centerX - 50, centerY + inputHeight + 50, 'Registrieren', {
+				font: '20px Arial',
+			})
+			.setInteractive()
+			.on('pointerdown', () => this.handleRegister());
 
 		// Rückmeldungstext initialisieren
 		this.feedbackText = this.add.text(
@@ -132,22 +141,69 @@ export default class MenuScene extends Phaser.Scene {
 		// Spiel-Logik für den Update-Loop
 	}
 
-	handleLogin() {
+	handleRegister() {
 		const email = this.emailInput.value;
 		const password = this.passwordInput.value;
 
-		// Einfache Validierung
 		if (!email || !password) {
 			this.feedbackText.setText('Bitte alle Felder ausfüllen!');
 			return;
 		}
 
-		// Verarbeitung der Eingaben (z.B. an einen Server senden)
-		console.log('E-Mail:', email);
-		console.log('Passwort:', password);
+		fetch('http://localhost:3001/register', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({ email, password }),
+		})
+			.then((response) => {
+				if (response.ok) {
+					return response.json();
+				}
+				throw new Error('Registrierung fehlgeschlagen');
+			})
+			.then((data) => {
+				this.feedbackText.setText(data.message);
+			})
+			.catch((error) => {
+				this.feedbackText.setText(error.message);
+			});
+	}
 
-		// Rückmeldung anzeigen
-		this.feedbackText.setText(`Willkommen, ${email}!`);
+	handleLogin() {
+		const email = this.emailInput.value;
+		const password = this.passwordInput.value;
+
+		if (!email || !password) {
+			this.feedbackText.setText('Bitte alle Felder ausfüllen!');
+			return;
+		}
+
+		fetch('http://localhost:3001/login', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({ email, password }),
+		})
+			.then((response) => {
+				if (response.ok) {
+					return response.json();
+				}
+				throw new Error('Login fehlgeschlagen');
+			})
+			.then((data) => {
+				if (data.token) {
+					this.feedbackText.setText('Login erfolgreich!');
+					console.log('Token:', data.token);
+				} else {
+					throw new Error('Ungültige Antwort vom Server');
+				}
+			})
+			.catch((error) => {
+				this.feedbackText.setText(error.message);
+			});
 
 		// Eingabefelder nach Login entfernen
 		this.emailInput.remove();
