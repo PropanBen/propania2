@@ -15,8 +15,6 @@
 	"author": "PropanBen",
 	"license": "ISC",
 	"devDependencies": {
-		"@types/bcrypt": "^5.0.2",
-		"@types/jsonwebtoken": "^9.0.7",
 		"@typescript-eslint/eslint-plugin": "^8.20.0",
 		"@typescript-eslint/parser": "^8.20.0",
 		"eslint": "^9.18.0",
@@ -24,10 +22,5 @@
 		"eslint-plugin-prettier": "^5.2.2",
 		"prettier": "^3.4.2"
 	},
-	"dependencies": {
-		"bcrypt": "^5.1.1",
-		"express": "^4.21.2",
-		"jsonwebtoken": "^9.0.2",
-		"mariadb": "^3.4.0"
-	}
+	"dependencies": {}
 }
