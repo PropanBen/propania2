@@ -51,14 +51,16 @@ export default class MenuScene extends Phaser.Scene {
 		const inputHeight = 30;
 		const gap = 20; // Abstand zwischen den Eingabefeldern
 
-		const emailtext = document.createElement('div');
-		emailtext.style.left = `${centerX - inputWidth / 2 + 70}px`;
-		emailtext.style.top = `${centerY - inputHeight / 2 - (inputHeight + gap) - 80}px`;
-		emailtext.innerText = 'E-Mail';
-		emailtext.style.position = 'absolute';
+		// E-Mail-Text erstellen und als Klassenattribute speichern
+		this.emailtext = document.createElement('div');
+		this.emailtext.style.left = `${centerX - inputWidth / 2 + 70}px`;
+		this.emailtext.style.top = `${centerY - inputHeight / 2 - (inputHeight + gap) - 80}px`;
+		this.emailtext.innerText = 'E-Mail';
+		this.emailtext.style.position = 'absolute';
+		document.body.appendChild(this.emailtext);
 
 		// Add it to the DOM
-		document.body.appendChild(emailtext);
+		document.body.appendChild(this.emailtext);
 
 		// E-Mail-Eingabefeld erstellen und zentrieren
 		this.emailInput = document.createElement('input');
@@ -73,13 +75,15 @@ export default class MenuScene extends Phaser.Scene {
 		this.emailInput.style.fontSize = '16px';
 		this.emailInput.style.zIndex = '10'; // Sicherstellen, dass das Eingabefeld im Vordergrund bleibt
 
-		const passwordtext = document.createElement('div');
-		passwordtext.style.left = `${centerX - inputWidth / 2 + 70}px`;
-		passwordtext.style.top = `${centerY - inputHeight / 2 - (inputHeight + gap + 10)}px`;
-		passwordtext.innerText = 'Password';
-		passwordtext.style.position = 'absolute';
+		// Passwort-Text erstellen und als Klassenattribute speichern
+		this.passwordtext = document.createElement('div');
+		this.passwordtext.style.left = `${centerX - inputWidth / 2 + 70}px`;
+		this.passwordtext.style.top = `${centerY - inputHeight / 2 - (inputHeight + gap + 10)}px`;
+		this.passwordtext.innerText = 'Password';
+		this.passwordtext.style.position = 'absolute';
+		document.body.appendChild(this.passwordtext);
 
-		document.body.appendChild(passwordtext);
+		document.body.appendChild(this.passwordtext);
 
 		// Passwort-Eingabefeld erstellen und zentrieren
 		this.passwordInput = document.createElement('input');
@@ -132,7 +136,7 @@ export default class MenuScene extends Phaser.Scene {
 		});
 
 		this.add
-			.text(centerX - 100, centerY + inputHeight + 170, 'Zum Spiel', {
+			.text(centerX - 100, centerY + inputHeight + 170, 'To the Game', {
 				fontSize: '32px',
 			})
 			.setInteractive()
@@ -165,7 +169,7 @@ export default class MenuScene extends Phaser.Scene {
 		const password = this.passwordInput.value;
 
 		if (!email || !password) {
-			this.feedbacktext.innerHTML = 'Bitte alle Felder ausfüllen!';
+			this.feedbacktext.innerHTML = 'Please fill all fields !';
 			return;
 		}
 
@@ -180,7 +184,7 @@ export default class MenuScene extends Phaser.Scene {
 				if (response.ok) {
 					return response.json();
 				}
-				throw new Error('Registrierung fehlgeschlagen');
+				throw new Error('Register failed');
 			})
 			.then((data) => {
 				this.feedbacktext.innerHTML = data.message;
@@ -195,7 +199,7 @@ export default class MenuScene extends Phaser.Scene {
 		const password = this.passwordInput.value;
 
 		if (!email || !password) {
-			this.feedbacktext.innerHTML = 'Bitte alle Felder ausfüllen!';
+			this.feedbacktext.innerHTML = 'Please fill all fields !';
 			return;
 		}
 
@@ -208,16 +212,20 @@ export default class MenuScene extends Phaser.Scene {
 		})
 			.then((response) => {
 				if (response.ok) {
+					this.scene.start('PlayerSelectionScene');
+
 					return response.json();
 				}
-				throw new Error('Login fehlgeschlagen');
+				throw new Error('Login failed');
 			})
 			.then((data) => {
 				if (data.token) {
-					this.feedbacktext.innerHTML = 'Login erfolgreich!';
+					this.feedbacktext.innerHTML = 'Login successfull!';
+					this.deactivateInputs();
+					this.scene.sleep();
 					console.log('Token:', data.token);
 				} else {
-					throw new Error('Ungültige Antwort vom Server');
+					throw new Error('Undefined Server Error');
 				}
 			})
 			.catch((error) => {
@@ -225,10 +233,11 @@ export default class MenuScene extends Phaser.Scene {
 			});
 	}
 
-	// Wenn die Szene gewechselt wird, deaktiviere die Eingabefelder
-	// und stelle sicher, dass sie nicht mehr sichtbar sind.
-	public deactivateInputs() {
+	deactivateInputs() {
 		this.emailInput.style.display = 'none';
 		this.passwordInput.style.display = 'none';
+		this.feedbacktext.style.display = 'none';
+		this.emailtext.style.display = 'none';
+		this.passwordtext.style.display = 'none';
 	}
 }

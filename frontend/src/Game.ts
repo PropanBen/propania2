@@ -1,7 +1,9 @@
 import LoginScene from './scenes/LoginScene.js';
+import PlayerSelectionScene from './scenes/PlayerSelectionScene.js';
 import GameScene from './scenes/GameScene.js';
 import UIScene from './scenes/UIScene.js';
 import IsoMapScene from './scenes/IsoMapScene.js';
+
 //import { Phaser } from 'phaser';
 import { io } from 'socket.io-client'; // Verwende diese Variante, falls es zu Problemen kommt
 import type { Types } from 'phaser';
@@ -20,7 +22,7 @@ const config: Types.Core.GameConfig = {
 		mode: Scale.FIT, // Passt das Spiel in den verfügbaren Platz ein
 		autoCenter: Scale.CENTER_BOTH, // Zentriert das Spiel
 	},
-	scene: [LoginScene, GameScene, UIScene, IsoMapScene],
+	scene: [LoginScene, PlayerSelectionScene, GameScene, UIScene, IsoMapScene],
 	physics: {
 		default: 'arcade', // Arcade Physics aktivieren
 		arcade: {
