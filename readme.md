@@ -1,3 +1,8 @@
+Commands to start he Project
+Terminal in Folder Backend -> npm start
+Terminal in Folder Frontend -> npm run dev
+
+
 Links :
 
 Charakter Generator
