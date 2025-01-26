@@ -14,7 +14,7 @@ export default class PlayerSelectionScene extends Phaser.Scene {
 
 	preload() {
 		this.load.image('background', 'assets/images/background.png');
-		this.load.image('propania2', 'assets/images/propania2.png');
+		this.load.image('playerselection', 'assets/images/playerselection.png');
 		this.load.image('logoutbutton', 'assets/images/logoutbutton.png');
 	}
 
@@ -29,6 +29,10 @@ export default class PlayerSelectionScene extends Phaser.Scene {
 		// Hintergrundbild hinzufügen
 		const bg = this.add.image(0, 0, 'background').setOrigin(0, 0);
 		bg.setOrigin(0, 0);
+
+		const propaniaImage = this.add
+			.image(centerX, centerY - 250, 'playerselection')
+			.setScale(0.8, 0.8);
 
 		// Skalierung berechnen, um den Bildschirm zu füllen
 		const scaleX = this.scale.width / bg.width;
