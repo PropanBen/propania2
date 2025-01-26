@@ -3,9 +3,11 @@ import type { Socket } from 'socket.io-client';
 import { io } from 'socket.io-client';
 
 export default class MenuScene extends Phaser.Scene {
+	private emailtext!: HTMLElement;
+	private passwordtext!: HTMLElement;
+	private feedbacktext!: HTMLElement; // Hier ist die korrekte Deklaration
 	private emailInput!: HTMLInputElement;
 	private passwordInput!: HTMLInputElement;
-	private feedbackText!: Phaser.GameObjects.Text;
 	private socket: Socket;
 	private graphics!: Phaser.GameObjects.Graphics;
 
@@ -17,6 +19,8 @@ export default class MenuScene extends Phaser.Scene {
 	preload() {
 		this.load.image('background', 'assets/images/background.png');
 		this.load.image('propania2', 'assets/images/propania2.png');
+		this.load.image('loginbutton', 'assets/images/loginbutton.png');
+		this.load.image('registerbutton', 'assets/images/registerbutton.png');
 	}
 
 	create() {
@@ -29,7 +33,7 @@ export default class MenuScene extends Phaser.Scene {
 
 		this.graphics = this.add.graphics();
 		this.graphics.fillStyle(0xdeb887, 1);
-		this.graphics.fillRoundedRect(centerX - 150, centerY - 150, 300, 300, 20);
+		this.graphics.fillRoundedRect(centerX - 150, centerY - 150, 300, 400, 20);
 
 		const propaniaImage = this.add
 			.image(centerX, centerY - 250, 'propania2')
@@ -47,6 +51,15 @@ export default class MenuScene extends Phaser.Scene {
 		const inputHeight = 30;
 		const gap = 20; // Abstand zwischen den Eingabefeldern
 
+		const emailtext = document.createElement('div');
+		emailtext.style.left = `${centerX - inputWidth / 2 + 70}px`;
+		emailtext.style.top = `${centerY - inputHeight / 2 - (inputHeight + gap) - 80}px`;
+		emailtext.innerText = 'E-Mail';
+		emailtext.style.position = 'absolute';
+
+		// Add it to the DOM
+		document.body.appendChild(emailtext);
+
 		// E-Mail-Eingabefeld erstellen und zentrieren
 		this.emailInput = document.createElement('input');
 		this.emailInput.type = 'email';
@@ -54,11 +67,19 @@ export default class MenuScene extends Phaser.Scene {
 		this.emailInput.placeholder = 'E-Mail-Adresse';
 		this.emailInput.style.position = 'absolute';
 		this.emailInput.style.left = `${centerX - inputWidth / 2}px`;
-		this.emailInput.style.top = `${centerY - inputHeight / 2 - (inputHeight + gap)}px`;
+		this.emailInput.style.top = `${centerY - inputHeight / 2 - (inputHeight + gap) - 50}px`;
 		this.emailInput.style.width = `${inputWidth}px`;
 		this.emailInput.style.height = `${inputHeight}px`;
 		this.emailInput.style.fontSize = '16px';
 		this.emailInput.style.zIndex = '10'; // Sicherstellen, dass das Eingabefeld im Vordergrund bleibt
+
+		const passwordtext = document.createElement('div');
+		passwordtext.style.left = `${centerX - inputWidth / 2 + 70}px`;
+		passwordtext.style.top = `${centerY - inputHeight / 2 - (inputHeight + gap + 10)}px`;
+		passwordtext.innerText = 'Password';
+		passwordtext.style.position = 'absolute';
+
+		document.body.appendChild(passwordtext);
 
 		// Passwort-Eingabefeld erstellen und zentrieren
 		this.passwordInput = document.createElement('input');
@@ -67,7 +88,7 @@ export default class MenuScene extends Phaser.Scene {
 		this.passwordInput.placeholder = 'Passwort';
 		this.passwordInput.style.position = 'absolute';
 		this.passwordInput.style.left = `${centerX - inputWidth / 2}px`;
-		this.passwordInput.style.top = `${centerY - inputHeight / 2}px`;
+		this.passwordInput.style.top = `${centerY - inputHeight / 2 - 25}px`;
 		this.passwordInput.style.width = `${inputWidth}px`;
 		this.passwordInput.style.height = `${inputHeight}px`;
 		this.passwordInput.style.fontSize = '16px';
@@ -77,30 +98,29 @@ export default class MenuScene extends Phaser.Scene {
 		document.body.appendChild(this.emailInput);
 		document.body.appendChild(this.passwordInput);
 
-		// Login-Button in Phaser zentrieren
+		// Login-Button als Bild erstellen
 		const loginButton = this.add
-			.text(centerX - 50, centerY + inputHeight, 'Einloggen', {
-				font: '20px Arial',
-			})
-			.setInteractive()
+			.image(centerX, centerY + 50, 'loginbutton') // Bild für den Login-Button
+			.setInteractive() // Macht das Bild interaktiv
+			.setScale(0.3, 0.3)
 			.on('pointerdown', () => this.handleLogin());
+		// Event-Handler für Klicks
 
+		// Registrieren-Button als Bild erstellen
 		const registerButton = this.add
-			.text(centerX - 50, centerY + inputHeight + 50, 'Registrieren', {
-				font: '20px Arial',
-			})
-			.setInteractive()
-			.on('pointerdown', () => this.handleRegister());
+			.image(centerX, centerY + 120, 'registerbutton') // Bild für den Registrieren-Button
+			.setInteractive() // Macht das Bild interaktiv
+			.setScale(0.3, 0.3)
+			.on('pointerdown', () => this.handleRegister()); // Event-Handler für Klicks
 
 		// Rückmeldungstext initialisieren
-		this.feedbackText = this.add.text(
-			centerX - 150,
-			centerY + inputHeight + 30,
-			'',
-			{
-				font: '20px Arial',
-			}
-		);
+		this.feedbacktext = document.createElement('div');
+		this.feedbacktext.style.left = `${centerX - inputWidth / 2 + 30}px`;
+		this.feedbacktext.style.top = `${centerY - inputHeight / 2 - (inputHeight + gap - 230)}px`;
+		this.feedbacktext.innerText = '';
+		this.feedbacktext.style.position = 'absolute';
+
+		document.body.appendChild(this.feedbacktext);
 
 		// Empfang von Servernachrichten
 		this.socket.on('loginSuccess', (message: string) => {
@@ -112,14 +132,13 @@ export default class MenuScene extends Phaser.Scene {
 		});
 
 		this.add
-			.text(centerX - 100, centerY + inputHeight + 70, 'Zum Spiel', {
+			.text(centerX - 100, centerY + inputHeight + 170, 'Zum Spiel', {
 				fontSize: '32px',
 			})
 			.setInteractive()
 			.on('pointerdown', () => {
 				this.scene.start('GameScene');
 				this.scene.sleep();
-				this.deactivateInputs();
 			});
 
 		// Initialen Text für Nachrichten anzeigen
@@ -146,7 +165,7 @@ export default class MenuScene extends Phaser.Scene {
 		const password = this.passwordInput.value;
 
 		if (!email || !password) {
-			this.feedbackText.setText('Bitte alle Felder ausfüllen!');
+			this.feedbacktext.innerHTML = 'Bitte alle Felder ausfüllen!';
 			return;
 		}
 
@@ -164,10 +183,10 @@ export default class MenuScene extends Phaser.Scene {
 				throw new Error('Registrierung fehlgeschlagen');
 			})
 			.then((data) => {
-				this.feedbackText.setText(data.message);
+				this.feedbacktext.innerHTML = data.message;
 			})
 			.catch((error) => {
-				this.feedbackText.setText(error.message);
+				this.feedbacktext.innerHTML = error.message;
 			});
 	}
 
@@ -176,7 +195,7 @@ export default class MenuScene extends Phaser.Scene {
 		const password = this.passwordInput.value;
 
 		if (!email || !password) {
-			this.feedbackText.setText('Bitte alle Felder ausfüllen!');
+			this.feedbacktext.innerHTML = 'Bitte alle Felder ausfüllen!';
 			return;
 		}
 
@@ -195,19 +214,15 @@ export default class MenuScene extends Phaser.Scene {
 			})
 			.then((data) => {
 				if (data.token) {
-					this.feedbackText.setText('Login erfolgreich!');
+					this.feedbacktext.innerHTML = 'Login erfolgreich!';
 					console.log('Token:', data.token);
 				} else {
 					throw new Error('Ungültige Antwort vom Server');
 				}
 			})
 			.catch((error) => {
-				this.feedbackText.setText(error.message);
+				this.feedbacktext.innerHTML = error.message;
 			});
-
-		// Eingabefelder nach Login entfernen
-		this.emailInput.remove();
-		this.passwordInput.remove();
 	}
 
 	// Wenn die Szene gewechselt wird, deaktiviere die Eingabefelder
