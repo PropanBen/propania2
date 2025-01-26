@@ -1,4 +1,4 @@
-import MenuScene from './scenes/MenuScene.js';
+import LoginScene from './scenes/LoginScene.js';
 import GameScene from './scenes/GameScene.js';
 import UIScene from './scenes/UIScene.js';
 import IsoMapScene from './scenes/IsoMapScene.js';
@@ -20,7 +20,7 @@ const config: Types.Core.GameConfig = {
 		mode: Scale.FIT, // Passt das Spiel in den verfügbaren Platz ein
 		autoCenter: Scale.CENTER_BOTH, // Zentriert das Spiel
 	},
-	scene: [MenuScene, GameScene, UIScene, IsoMapScene],
+	scene: [LoginScene, GameScene, UIScene, IsoMapScene],
 	physics: {
 		default: 'arcade', // Arcade Physics aktivieren
 		arcade: {
