@@ -15,7 +15,7 @@ const io = new Server(server, {
 	cors: {
 		origin: 'http://localhost:8080', // Erlaube Frontend auf Port 8080
 		methods: ['GET', 'POST'],
-		allowedHeaders: ['Content-Type'], // Sicherstellen, dass der Content-Type erlaubt wird
+		allowedHeaders: ['Content-Type', 'Authorization'], // Sicherstellen, dass der Content-Type erlaubt wird
 		credentials: true, // Falls du mit Cookies oder Authentifizierung arbeitest
 	},
 });
@@ -26,6 +26,7 @@ app.use(
 		origin: 'http://localhost:8080', // Erlaube Frontend auf Port 8080
 		methods: ['GET', 'POST'],
 		credentials: true, // Falls Cookies verwendet werden
+		allowedHeaders: ['Content-Type', 'Authorization'],
 	})
 );
 dotenv.config();
@@ -45,22 +46,39 @@ const pool = mariadb.createPool({
 // Benutzerkonto erstellen
 app.post('/register', async (req, res) => {
 	const { email, password } = req.body as { email: string; password: string };
+
+	// Überprüfen, ob alle Felder ausgefüllt sind
 	if (!email || !password) {
-		res.status(400).json({ message: 'Bitte alle Felder ausfüllen!' });
+		res.status(400).json({ message: 'Please fill all fields' });
+		return; // Wichtig: return hinzufügen, um die Ausführung zu stoppen
 	}
 
 	try {
-		const hashedPassword = (await bcrypt.hash(password, 10)) as string; // Passwort hashen
-
 		const conn = await pool.getConnection();
-		const query = `INSERT INTO account (email, password, created_at) VALUES (?, ?, NOW())`;
-		await conn.query(query, [email, hashedPassword]);
-		conn.release();
 
-		res.status(201).json({ message: 'Benutzer erfolgreich registriert!' });
+		try {
+			// Überprüfen, ob die E-Mail bereits existiert
+			const checkEmailQuery = `SELECT * FROM account WHERE email = ?`;
+			const existingUsers = await conn.query(checkEmailQuery, [email]);
+
+			if (existingUsers.length > 0) {
+				// E-Mail existiert bereits
+				res.status(400).json({ message: 'E-Mail already in use' });
+				return; // Wichtig: return hinzufügen, um die Ausführung zu stoppen
+			}
+
+			// E-Mail existiert nicht, Benutzer erstellen
+			const hashedPassword = (await bcrypt.hash(password, 10)) as string; // Passwort hashen
+			const createUserQuery = `INSERT INTO account (email, password, created_at) VALUES (?, ?, NOW())`;
+			await conn.query(createUserQuery, [email, hashedPassword]);
+
+			res.status(201).json({ message: 'Successfully registered' });
+		} finally {
+			conn.release(); // Verbindung immer freigeben
+		}
 	} catch (error) {
 		console.error(error);
-		res.status(500).json({ message: 'Fehler beim Erstellen des Kontos' });
+		res.status(500).json({ message: 'Failed to create an account' });
 	}
 });
 
@@ -116,6 +134,15 @@ app.post('/login', async (req: Request, res: Response): Promise<void> => {
 	}
 });
 
+app.post(
+	'/validateToken',
+	authenticateToken,
+	(req: AuthenticatedRequest, res: Response) => {
+		// Wenn die Middleware `authenticateToken` erfolgreich ist, ist der Token gültig
+		res.status(200).json({ message: 'Token is valid', user: req.user });
+	}
+);
+
 // Middleware zur Authentifizierung mit JWT
 interface AuthenticatedRequest extends Request {
 	user?: { userId: number; email: string };
@@ -131,6 +158,7 @@ function authenticateToken(
 
 	if (!token) {
 		res.status(401).json({ message: 'Zugriff verweigert!' });
+		return; // Wichtig: return hinzufügen, um die Ausführung zu stoppen
 	}
 
 	if (typeof token === 'string') {
@@ -146,6 +174,7 @@ function authenticateToken(
 		res.status(401).json({ message: 'Zugriff verweigert!' });
 	}
 }
+
 /*
 // Beispiel geschützter Route
 app.get(

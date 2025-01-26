@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import type { Socket } from 'socket.io-client';
 import { io } from 'socket.io-client';
 
-export default class MenuScene extends Phaser.Scene {
+export default class LoginScene extends Phaser.Scene {
 	private emailtext!: HTMLElement;
 	private passwordtext!: HTMLElement;
 	private feedbacktext!: HTMLElement; // Hier ist die korrekte Deklaration
@@ -10,10 +10,19 @@ export default class MenuScene extends Phaser.Scene {
 	private passwordInput!: HTMLInputElement;
 	private socket: Socket;
 	private graphics!: Phaser.GameObjects.Graphics;
+	private clickSound!: Phaser.Sound.BaseSound;
 
 	constructor() {
-		super({ key: 'MenuScene' });
+		super({ key: 'LoginScene' });
 		this.socket = io('http://localhost:3001');
+	}
+
+	init() {
+		// Überprüfen, ob ein Token vorhanden ist
+		const token = localStorage.getItem('token');
+		if (token) {
+			this.validateToken(token);
+		}
 	}
 
 	preload() {
@@ -21,9 +30,14 @@ export default class MenuScene extends Phaser.Scene {
 		this.load.image('propania2', 'assets/images/propania2.png');
 		this.load.image('loginbutton', 'assets/images/loginbutton.png');
 		this.load.image('registerbutton', 'assets/images/registerbutton.png');
+		this.load.audio('clickSound', 'assets/sounds/click.mp3');
 	}
 
 	create() {
+		// Sounds
+
+		this.clickSound = this.sound.add('clickSound');
+
 		const centerX = this.scale.width / 2;
 		const centerY = this.scale.height / 2;
 
@@ -107,7 +121,17 @@ export default class MenuScene extends Phaser.Scene {
 			.image(centerX, centerY + 50, 'loginbutton') // Bild für den Login-Button
 			.setInteractive() // Macht das Bild interaktiv
 			.setScale(0.3, 0.3)
-			.on('pointerdown', () => this.handleLogin());
+			.on('pointerdown', () => {
+				this.handleLogin(); // Erste Funktion
+				this.handleClickSound(); // Zweite Funktion
+			})
+			.on('pointerover', () => {
+				loginButton.setScale(0.31, 0.31);
+			})
+			.on('pointerout', () => {
+				loginButton.setScale(0.3, 0.3);
+			});
+
 		// Event-Handler für Klicks
 
 		// Registrieren-Button als Bild erstellen
@@ -115,7 +139,16 @@ export default class MenuScene extends Phaser.Scene {
 			.image(centerX, centerY + 120, 'registerbutton') // Bild für den Registrieren-Button
 			.setInteractive() // Macht das Bild interaktiv
 			.setScale(0.3, 0.3)
-			.on('pointerdown', () => this.handleRegister()); // Event-Handler für Klicks
+			.on('pointerdown', () => {
+				this.handleRegister(); // Erste Funktion
+				this.handleClickSound(); // Zweite Funktion
+			})
+			.on('pointerover', () => {
+				registerButton.setScale(0.31, 0.31);
+			})
+			.on('pointerout', () => {
+				registerButton.setScale(0.3, 0.3);
+			});
 
 		// Rückmeldungstext initialisieren
 		this.feedbacktext = document.createElement('div');
@@ -147,7 +180,7 @@ export default class MenuScene extends Phaser.Scene {
 
 		// Initialen Text für Nachrichten anzeigen
 		const messageText = this.add
-			.text(centerX, centerY - 150, '', {
+			.text(centerX, centerY - 200, '', {
 				font: '32px Arial',
 				align: 'center',
 			})
@@ -182,14 +215,21 @@ export default class MenuScene extends Phaser.Scene {
 		})
 			.then((response) => {
 				if (response.ok) {
-					return response.json();
+					return response.json() as Promise<{ message: string }>; // Erfolgsfall
+				} else {
+					// Fehlerfall: Wirft einen Fehler, der im catch-Block behandelt wird
+					return response.json().then((errorData: { message: string }) => {
+						throw new Error(errorData.message || 'Failed to register');
+					});
 				}
-				throw new Error('Register failed');
 			})
 			.then((data) => {
+				// Erfolgreiche Registrierung
 				this.feedbacktext.innerHTML = data.message;
 			})
 			.catch((error) => {
+				// Fehlerbehandlung
+				console.error('Failed to register:', error.message);
 				this.feedbacktext.innerHTML = error.message;
 			});
 	}
@@ -212,18 +252,18 @@ export default class MenuScene extends Phaser.Scene {
 		})
 			.then((response) => {
 				if (response.ok) {
-					this.scene.start('PlayerSelectionScene');
-
 					return response.json();
 				}
 				throw new Error('Login failed');
 			})
 			.then((data) => {
 				if (data.token) {
+					// Token im localStorage speichern
+					localStorage.setItem('token', data.token);
+					console.log('Token gespeichert:', data.token); // Debugging
 					this.feedbacktext.innerHTML = 'Login successfull!';
 					this.deactivateInputs();
-					this.scene.sleep();
-					console.log('Token:', data.token);
+					this.scene.start('PlayerSelectionScene');
 				} else {
 					throw new Error('Undefined Server Error');
 				}
@@ -233,11 +273,38 @@ export default class MenuScene extends Phaser.Scene {
 			});
 	}
 
+	validateToken(token: string) {
+		fetch('http://localhost:3001/validateToken', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: `Bearer ${token}`, // Stellen Sie sicher, dass der Token korrekt übermittelt wird
+			},
+		})
+			.then((response) => {
+				if (response.ok) {
+					// Token ist gültig, weiter zur PlayerSelectionScene
+					this.scene.start('PlayerSelectionScene');
+				} else {
+					// Token ist ungültig, entfernen Sie es aus dem localStorage
+					localStorage.removeItem('token');
+					throw new Error('Invalid token');
+				}
+			})
+			.catch((error) => {
+				console.error('Token validation failed:', error);
+			});
+	}
+
 	deactivateInputs() {
 		this.emailInput.style.display = 'none';
 		this.passwordInput.style.display = 'none';
 		this.feedbacktext.style.display = 'none';
 		this.emailtext.style.display = 'none';
 		this.passwordtext.style.display = 'none';
+	}
+
+	handleClickSound() {
+		this.clickSound.play();
 	}
 }
