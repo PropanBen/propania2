@@ -6,13 +6,14 @@
 		"strict": true,
 		"esModuleInterop": true,
 		"outDir": "dist",
-		"baseUrl": ".",
+		"baseUrl": "./",
 		"paths": {
-			"@backend/*": ["./*"],
 			"@shared/*": ["types/*"]
 		},
-		"allowJs": false
+		"allowJs": false,
+		"resolveJsonModule": true,
+		"skipLibCheck": true
 	},
-	"include": ["server.ts", "backend/**/*.ts"],
+	"include": ["src/**/*"],
 	"exclude": ["node_modules"]
 }
