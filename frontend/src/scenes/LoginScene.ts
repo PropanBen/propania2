@@ -206,7 +206,7 @@ export default class LoginScene extends Phaser.Scene {
 			return;
 		}
 
-		fetch('http://localhost:3001/register', {
+		fetch('http://localhost:3001/auth/register', {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
@@ -243,7 +243,7 @@ export default class LoginScene extends Phaser.Scene {
 			return;
 		}
 
-		fetch('http://localhost:3001/login', {
+		fetch('http://localhost:3001/auth/login', {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
@@ -274,7 +274,7 @@ export default class LoginScene extends Phaser.Scene {
 	}
 
 	validateToken(token: string) {
-		fetch('http://localhost:3001/validateToken', {
+		fetch('http://localhost:3001/auth/validateToken', {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
