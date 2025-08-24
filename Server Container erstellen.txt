@@ -1,0 +1,76 @@
+✅ Voraussetzungen
+📦 Du hast:
+
+    Einen funktionierenden TypeScript-Server mit:
+
+        server.ts
+
+        package.json
+
+        tsconfig.json
+
+    Synology NAS mit Docker-Paket installiert
+
+    Zugriff auf NAS via DSM (Weboberfläche) oder per SSH
+
+
+package.json anpassen
+"scripts": {
+  "build": "tsc",
+  "start": "node dist/server.js"
+}
+
+🪜 Schritt 3: Dockerfile erstellen
+
+Erstelle im Projektordner eine Datei namens Dockerfile:
+
+# 1. Basis-Image
+FROM node:24
+
+# 2. Arbeitsverzeichnis im Container
+WORKDIR /app
+
+# 3. Package-Dateien kopieren und Abhängigkeiten installieren
+COPY package*.json ./
+RUN npm install
+
+# 4. Projektdateien kopieren
+COPY . .
+
+# 5. TypeScript build
+RUN npm run build
+
+# 6. Port freigeben
+EXPOSE 3001
+
+# 7. Startbefehl
+CMD ["node", "dist/server.js"]
+
+🪜 Schritt 4: .dockerignore hinzufügen (optional, aber empfohlen)
+
+node_modules
+dist
+.env
+*.log
+
+/volume1/docker/propania2-server/
+
+🪜 Schritt 6: SSH auf Synology öffnen
+
+    Aktiviere SSH-Zugriff in DSM:
+
+        Systemsteuerung → Terminal & SNMP → SSH aktivieren
+
+cd /volume1/docker/propania2-server/
+
+🪜 Schritt 7: Docker-Image bauen
+
+docker build -t propania2-server .
+
+In der Synology Oberfläche einen neuen Container mit dem zuvor erstellten Image erstellen.
+Neues Volume anlegen
+Pfad auf der NAS angeben volume1/docker/propania2-server/ und als internen Containerpfad /app eingeben
+
+Container starten
+
+   

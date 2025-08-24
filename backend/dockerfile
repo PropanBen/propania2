@@ -1,0 +1,21 @@
+# 1. Basis-Image
+FROM node:24
+
+# 2. Arbeitsverzeichnis im Container
+WORKDIR /app
+
+# 3. Package-Dateien kopieren und Abhängigkeiten installieren
+COPY package*.json ./
+RUN npm install
+
+# 4. Projektdateien kopieren
+COPY . .
+
+# 5. TypeScript build
+RUN npm run build
+
+# 6. Port freigeben
+EXPOSE 3001
+
+# 7. Startbefehl
+CMD ["node", "dist/server.js"]

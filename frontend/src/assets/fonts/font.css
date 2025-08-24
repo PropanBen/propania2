@@ -1,0 +1,15 @@
+@font-face {
+	font-family: 'PerryGothic';
+	src: url('PERRYGOT.eot');
+	/* IE9 Compat Modes */
+	src:
+		url('PERRYGOT.eot?#iefix') format('embedded-opentype'),
+		/* IE6-IE8 */ url('PERRYGOT.otf') format('opentype'),
+		/* Open Type Font */ url('PERRYGOT.svg') format('svg'),
+		/* Legacy iOS */ url('PERRYGOT.ttf') format('truetype'),
+		/* Safari, Android, iOS */ url('PERRYGOT.woff') format('woff'),
+		/* Modern Browsers */ url('PERRYGOT.woff2') format('woff2');
+	/* Modern Browsers */
+	font-weight: normal;
+	font-style: normal;
+}
