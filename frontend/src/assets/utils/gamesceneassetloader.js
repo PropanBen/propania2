@@ -11,4 +11,16 @@ export function preloadAssets(scene) {
 
 	const groundUrl = new URL('../map/images/Ground.png', import.meta.url).href;
 	scene.load.image('ground', groundUrl);
+
+	const logURL = new URL('../items/Items.png', import.meta.url).href;
+	scene.load.spritesheet('items', logURL, {
+		frameWidth: 32,
+		frameHeight: 32,
+	});
+
+	const mushroomURL = new URL('../items/mushroom.png', import.meta.url).href;
+	scene.load.image('mushroom', mushroomURL, {
+		frameWidth: 32,
+		frameHeight: 32,
+	});
 }
