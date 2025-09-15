@@ -142,37 +142,40 @@ export function initGameServer(io) {
 		/**
 		 * Item-Drop: Inventar -> Welt
 		 */
-		socket.on('item:drop:request', async ({ item_id, quantity, x, y }) => {
-			try {
-				const player = players.get(socket.id);
-				if (!player) return;
+		socket.on(
+			'item:drop:request',
+			async ({ item_id, quantity, dropPosition }) => {
+				try {
+					const player = players.get(socket.id);
+					if (!player) return;
 
-				const qty = Math.max(1, Number(quantity) || 1);
-				const px = Math.round(x ?? player.x ?? 0);
-				const py = Math.round(y ?? player.y ?? 0);
+					const qty = Math.max(1, Number(quantity) || 1);
+					const px = Math.round(dropPosition['x'] ?? player.x ?? 0);
+					const py = Math.round(dropPosition['y'] ?? player.y ?? 0);
 
-				// Transaktion: inventory_items -> world_items
-				const created = await moveInventoryItemToWorld(
-					'player',
-					player.id,
-					item_id,
-					qty,
-					px,
-					py
-				);
+					// Transaktion: inventory_items -> world_items
+					const created = await moveInventoryItemToWorld(
+						'player',
+						player.id,
+						item_id,
+						qty,
+						px,
+						py
+					);
 
-				// In-Memory hinzufügen + allen mitteilen
-				worldItems.set(created.id, created);
-				io.emit('item:spawned', created);
+					// In-Memory hinzufügen + allen mitteilen
+					worldItems.set(created.id, created);
+					io.emit('item:spawned', created);
 
-				// Inventar des Spielers aktualisieren
-				const inv = await loadInventory('player', player.id);
-				socket.emit('inventory:update', inv);
-			} catch (err) {
-				console.error('item:drop:request error', err);
-				socket.emit('item:error', { message: err.message ?? 'Drop failed' });
+					// Inventar des Spielers aktualisieren
+					const inv = await loadInventory('player', player.id);
+					socket.emit('inventory:update', inv);
+				} catch (err) {
+					console.error('item:drop:request error', err);
+					socket.emit('item:error', { message: err.message ?? 'Drop failed' });
+				}
 			}
-		});
+		);
 
 		/**
 		 * Disconnect

@@ -105,6 +105,30 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 		return this;
 	}
 
+	setDropPostion(direction) {
+		let position = { x: this.x, y: this.y };
+		const offset = 50;
+		switch (direction) {
+			case 'up':
+				position.y -= offset - 40;
+				break;
+			case 'down':
+				position.y += offset + 20;
+				break;
+			case 'left':
+				position.x -= offset;
+				position.y += 40;
+				break;
+			case 'right':
+				position.x += offset;
+				position.y += 40;
+				break;
+			default:
+				break;
+		}
+		return position;
+	}
+
 	destroy(fromScene) {
 		if (this.nameText) {
 			this.nameText.destroy();
@@ -183,7 +207,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 	playActionAnimation(animKey, duration = 500) {
 		this.state = 'action';
 		this.setVelocity(0, 0);
-		this.play(animKey, true);
+		this.play(animKey + '_' + this.lastDirection, true);
 		this.currentAnim = animKey;
 
 		this.scene.socket.emit('playerMovement', {

@@ -23,4 +23,12 @@ export function preloadAssets(scene) {
 		frameWidth: 32,
 		frameHeight: 32,
 	});
+
+	// Sounds
+
+	const popsoundURL = new URL('../sounds/pop.mp3', import.meta.url).href;
+	scene.load.audio('pop', popsoundURL);
+
+	const dropsoundURL = new URL('../sounds/drop.mp3', import.meta.url).href;
+	scene.load.audio('drop', dropsoundURL);
 }

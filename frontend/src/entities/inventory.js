@@ -32,8 +32,8 @@ export default class Inventory {
 	}
 
 	refreshUI() {
-		const lines = ['Inventar:'];
-		if (this.items.length === 0) lines.push('  (leer)');
+		const lines = ['Inventory:'];
+		if (this.items.length === 0) lines.push('  (empty)');
 		this.items.forEach((it, idx) => {
 			lines.push(`  ${idx + 1}. ${it.name} x${it.quantity}`);
 		});
@@ -42,5 +42,9 @@ export default class Inventory {
 
 	getFirstDroppableItem() {
 		return this.items[0] ?? null;
+	}
+
+	setInventoryPosition(x, y) {
+		this.uiText.setPosition(x, y);
 	}
 }

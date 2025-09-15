@@ -7,5 +7,7 @@
 	},
 	"editor.defaultFormatter": "esbenp.prettier-vscode",
 	"prettier.singleQuote": true,
-	"prettier.useTabs": true
+	"prettier.useTabs": true,
+	"editor.fontFamily": "Pixel Code",
+	"editor.fontSize": 20
 }

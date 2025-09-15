@@ -25,7 +25,6 @@ export default class GameScene extends Phaser.Scene {
 	}
 
 	create() {
-		console.log(this.textures.list);
 		this.socket = socket;
 		this.players = {};
 		this.playerGroup = this.physics.add.group();
@@ -66,10 +65,11 @@ export default class GameScene extends Phaser.Scene {
 
 		// HUD: Aufheben-Hinweis
 		this.interactText = this.add
-			.text(0, 0, '[E] Aufheben', {
+			.text(0, 0, '[E] Pick up', {
 				fontSize: '14px',
-				color: '#ffffff',
-				backgroundColor: 'rgba(0,0,0,0.35)',
+				fontStyle: 'bold',
+				color: '#ffffffff',
+				//backgroundColor: 'rgba(0,0,0,0.35)',
 				padding: { x: 6, y: 2 },
 			})
 			.setOrigin(0.5)
@@ -172,6 +172,15 @@ export default class GameScene extends Phaser.Scene {
 		});
 		this.interactText.setVisible(false);
 		this.nearItemId = null;
+
+		// 👇 Lokalen Spieler Aufheben-Animation abspielen lassen
+		const you = this.players[this.socket.id];
+		if (you && you.isLocalPlayer) {
+			you.playActionAnimation('pickup', 600);
+		}
+
+		const config = { delay: 0.4 };
+		this.sound.play('pop', config);
 	}
 
 	tryDrop() {
@@ -179,13 +188,19 @@ export default class GameScene extends Phaser.Scene {
 		if (!you) return;
 		const it = this.inventory.getFirstDroppableItem();
 		if (!it) return;
+		const dropPosition = you.setDropPostion(you.lastDirection);
 		this.socket.emit('item:drop:request', {
 			item_id: it.item_id,
 			quantity: 1,
-			x: Math.round(you.x),
-			y: Math.round(you.y) + 70,
+			dropPosition,
 			player_id: this.player_id,
 		});
+		// 👇 Lokalen Spieler Fallenlassen-Animation abspielen lassen
+		if (you && you.isLocalPlayer) {
+			you.playActionAnimation('drop', 600);
+			const config = { delay: 0.7 };
+			this.sound.play('drop', config);
+		}
 	}
 
 	update() {
@@ -218,6 +233,9 @@ export default class GameScene extends Phaser.Scene {
 		}
 		// Spieler und Items nach Y sortieren
 		this.updateDepthSorting();
+
+		// Inventar-UI Position anpassen
+		this.inventory.setInventoryPosition(16, 16);
 	}
 
 	updateDepthSorting() {
