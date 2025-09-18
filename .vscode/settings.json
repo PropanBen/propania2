@@ -1,13 +1,18 @@
 {
 	"editor.formatOnSave": true,
-	"eslint.format.enable": true,
+	"eslint.format.enable": false,
 	"editor.codeActionsOnSave": {
 		"source.fixAll": "explicit",
 		"source.fixAll.eslint": "explicit"
 	},
 	"editor.defaultFormatter": "esbenp.prettier-vscode",
-	"prettier.singleQuote": true,
+	"[json]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+	"[jsonc]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
 	"prettier.useTabs": true,
+	"prettier.printWidth": 140,
+	"prettier.arrowParens": "avoid",
+	"prettier.trailingComma": "es5",
+	"prettier.bracketSpacing": true,
 	"editor.fontFamily": "Pixel Code",
 	"editor.fontSize": 20
 }
