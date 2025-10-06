@@ -65,7 +65,7 @@ cd /volume1/docker/propania2-server/
 
 🪜 Schritt 7: Docker-Image bauen
 
-docker build -t propania2-server .
+sudo docker build -t propania2-server .
 
 In der Synology Oberfläche einen neuen Container mit dem zuvor erstellten Image erstellen.
 Neues Volume anlegen
