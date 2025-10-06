@@ -1,6 +1,8 @@
+import { socket } from "../socket";
+
 export default class Player extends Phaser.Physics.Arcade.Sprite {
 	constructor(scene, playerInfo, isLocalPlayer) {
-		super(scene, playerInfo.x, playerInfo.y, 'player');
+		super(scene, playerInfo.x, playerInfo.y, "player");
 
 		this.scene = scene;
 		this.socket_id = playerInfo.socket_id;
@@ -24,14 +26,14 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
 		this.speed = 200;
 		this.runSpeed = 350; // Sprintgeschwindigkeit
-		this.currentAnim = playerInfo.anim || 'idle_down';
-		this.lastDirection = 'down';
-		this.state = 'idle';
+		this.currentAnim = playerInfo.anim || "idle_down";
+		this.lastDirection = "down";
+		this.state = "idle";
 
 		this.nameText = scene.add
 			.text(this.x, this.y - 40, this.name, {
-				fontSize: '14px',
-				color: '#fff',
+				fontSize: "14px",
+				color: "#fff",
 			})
 			.setOrigin(0.5);
 
@@ -50,32 +52,26 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 			this.camera.startFollow(this);
 
 			// Kamera Input Controls
-			this.keyPlus = scene.input.keyboard.addKey(
-				Phaser.Input.Keyboard.KeyCodes.PLUS
-			);
-			this.keyMinus = scene.input.keyboard.addKey(
-				Phaser.Input.Keyboard.KeyCodes.MINUS
-			);
-			this.spaceKey = scene.input.keyboard.addKey(
-				Phaser.Input.Keyboard.KeyCodes.SPACE
-			);
+			this.keyPlus = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.PLUS);
+			this.keyMinus = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.MINUS);
+			this.spaceKey = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
 			// Für Kamera-Freibewegung
 			this.freeCameraMode = false;
 			this.dragging = false;
 
 			// Maus-Drag für Kamera
-			scene.input.on('pointerdown', (pointer) => {
+			scene.input.on("pointerdown", (pointer) => {
 				if (this.freeCameraMode && pointer.rightButtonDown() === false) {
 					this.dragging = true;
 					this.dragX = pointer.x;
 					this.dragY = pointer.y;
 				}
 			});
-			scene.input.on('pointerup', () => {
+			scene.input.on("pointerup", () => {
 				this.dragging = false;
 			});
-			scene.input.on('pointermove', (pointer) => {
+			scene.input.on("pointermove", (pointer) => {
 				if (this.freeCameraMode && this.dragging) {
 					const dx = this.dragX - pointer.x;
 					const dy = this.dragY - pointer.y;
@@ -87,7 +83,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 			});
 
 			// Mausrad Zoom
-			scene.input.on('wheel', (pointer, gameObjects, deltaX, deltaY) => {
+			scene.input.on("wheel", (pointer, gameObjects, deltaX, deltaY) => {
 				if (deltaY > 0) {
 					this.camera.zoom = Phaser.Math.Clamp(this.camera.zoom - 0.1, 0.5, 3);
 				} else if (deltaY < 0) {
@@ -109,17 +105,17 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 		let position = { x: this.x, y: this.y };
 		const offset = 50;
 		switch (direction) {
-			case 'up':
+			case "up":
 				position.y -= offset - 40;
 				break;
-			case 'down':
+			case "down":
 				position.y += offset + 20;
 				break;
-			case 'left':
+			case "left":
 				position.x -= offset;
 				position.y += 40;
 				break;
-			case 'right':
+			case "right":
 				position.x += offset;
 				position.y += 40;
 				break;
@@ -147,7 +143,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 			this.updateCameraControls();
 
 			// Spielerbewegung
-			if (this.state !== 'action' && !this.freeCameraMode) {
+			if (this.state !== "action" && !this.freeCameraMode) {
 				this.handleMovement();
 			}
 		}
@@ -155,7 +151,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 			this.nameText.setPosition(this.x, this.y - 40);
 		}
 
-		this.scene.socket.emit('playerMovement', {
+		this.scene.socket.emit("playerMovement", {
+			socket_id: this.socket_id,
 			x: this.x,
 			y: this.y,
 			anim: this.currentAnim,
@@ -172,30 +169,30 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
 		if (this.keys.left.isDown) {
 			vx = -currentSpeed;
-			anim = isRunning ? 'run_left' : 'walk_left';
-			this.lastDirection = 'left';
+			anim = isRunning ? "run_left" : "walk_left";
+			this.lastDirection = "left";
 		} else if (this.keys.right.isDown) {
 			vx = currentSpeed;
-			anim = isRunning ? 'run_right' : 'walk_right';
-			this.lastDirection = 'right';
+			anim = isRunning ? "run_right" : "walk_right";
+			this.lastDirection = "right";
 		}
 		if (this.keys.up.isDown) {
 			vy = -currentSpeed;
-			anim = isRunning ? 'run_up' : 'walk_up';
-			this.lastDirection = 'up';
+			anim = isRunning ? "run_up" : "walk_up";
+			this.lastDirection = "up";
 		} else if (this.keys.down.isDown) {
 			vy = currentSpeed;
-			anim = isRunning ? 'run_down' : 'walk_down';
-			this.lastDirection = 'down';
+			anim = isRunning ? "run_down" : "walk_down";
+			this.lastDirection = "down";
 		}
 
 		this.setVelocity(vx, vy);
 
 		if (vx === 0 && vy === 0) {
 			anim = `idle_${this.lastDirection}`;
-			this.state = 'idle';
+			this.state = "idle";
 		} else {
-			this.state = isRunning ? 'run' : 'walk';
+			this.state = isRunning ? "run" : "walk";
 		}
 
 		if (anim && anim !== this.currentAnim) {
@@ -205,22 +202,19 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 	}
 
 	playActionAnimation(animKey, duration = 500) {
-		this.state = 'action';
+		this.state = "action";
 		this.setVelocity(0, 0);
-		this.play(animKey + '_' + this.lastDirection, true);
-		this.currentAnim = animKey;
 
-		this.scene.socket.emit('playerMovement', {
-			x: this.x,
-			y: this.y,
-			anim: animKey,
-		});
+		const fullAnimKey = animKey + "_" + this.lastDirection;
+		this.play(fullAnimKey, true);
+		this.currentAnim = fullAnimKey; // wichtig!
 
 		this.scene.time.delayedCall(duration, () => {
-			if (this.state === 'action') {
-				this.state = 'idle';
-				this.play(`idle_${this.lastDirection}`, true);
-				this.currentAnim = `idle_${this.lastDirection}`;
+			if (this.state === "action") {
+				this.state = "idle";
+				const idleAnim = `idle_${this.lastDirection}`;
+				this.play(idleAnim, true);
+				this.currentAnim = idleAnim;
 			}
 		});
 	}

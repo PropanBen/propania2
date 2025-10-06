@@ -1,15 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import Login from './login.jsx';
-import { startGame, destroyGame } from './game.jsx';
+import React, { useState, useEffect } from "react";
+import Login from "./login.jsx";
+import { startGame, destroyGame } from "./game.jsx";
 
 function App() {
 	const [account, setAccount] = useState(null);
 	const [account_id, setAccount_id] = useState(null);
 
+	// ✅ API-URL aus .env
+	const API_BASE = `${import.meta.env.VITE_API_PROTOKOLL}://${import.meta.env.VITE_API_URL}:${import.meta.env.VITE_API_PORT}`;
+
 	const checkAuth = async () => {
 		try {
-			const res = await fetch('http://localhost:3001/api/auth/me', {
-				credentials: 'include', // Cookie wird automatisch gesendet
+			const res = await fetch(`${API_BASE}/api/auth/me`, {
+				credentials: "include", // Cookie wird automatisch gesendet
 			});
 			if (res.ok) {
 				const data = await res.json();
@@ -20,7 +23,7 @@ function App() {
 				setAccount_id(null);
 			}
 		} catch (err) {
-			console.error(err);
+			console.error("Auth check failed:", err);
 			setAccount(null);
 			setAccount_id(null);
 		}
@@ -31,7 +34,26 @@ function App() {
 		if (account) {
 			startGame(account_id);
 		}
+		// Cleanup optional: Game zerstören beim Unmount
+		return () => {
+			destroyGame();
+		};
 	}, [account]);
+
+	const handleLogout = async () => {
+		try {
+			await fetch(`${API_BASE}/api/auth/logout`, {
+				method: "POST",
+				credentials: "include",
+			});
+		} catch (err) {
+			console.error("Logout failed:", err);
+		} finally {
+			setAccount(null);
+			setAccount_id(null);
+			destroyGame();
+		}
+	};
 
 	if (!account) {
 		return <Login onLogin={setAccount} />;
@@ -39,22 +61,8 @@ function App() {
 
 	return (
 		<div>
-			<button
-				onClick={async () => {
-					await fetch('http://localhost:3001/api/auth/logout', {
-						method: 'POST',
-						credentials: 'include',
-					});
-					setAccount(null);
-					destroyGame();
-				}}
-			>
-				Logout
-			</button>
-			<div
-				id="game-container"
-				style={{ width: '100vw', height: '100vh', visibility: 'visible' }}
-			></div>
+			<button onClick={handleLogout}>Logout</button>
+			<div id="game-container" style={{ width: "100vw", height: "100vh", visibility: "visible" }}></div>
 		</div>
 	);
 }
