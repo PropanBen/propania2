@@ -6,11 +6,14 @@ import {
 	moveWorldItemToInventory,
 	moveInventoryItemToWorld,
 	loadInventory,
+	loadResourcesDefinitions,
+	loadWorldResources,
 } from "../database/db.js";
 
 export function initGameServer(io) {
-	const players = new Map(); // socket.id -> player {id (DB), name, x,y,anim, socket_id}
-	const worldItems = new Map(); // world_item_id -> { id, item_id, x,y, quantity, key, name }
+	const players = new Map();
+	const worldItems = new Map();
+	let worldResources = {};
 
 	async function ensureWorldItemsLoaded() {
 		if (worldItems.size > 0) return;
@@ -70,6 +73,12 @@ export function initGameServer(io) {
 					// Inventar des Spielers senden
 					const inv = await loadInventory("player", player_id);
 					socket.emit("inventory:update", inv);
+
+					const resourcesDefinitions = await loadResourcesDefinitions();
+					worldResources = await loadWorldResources();
+
+					const resources = { resourcesDefinitions, worldResources };
+					socket.emit("world:resources:init", resources);
 
 					// Allen anderen mitteilen, dass neuer Spieler da ist
 					socket.broadcast.emit("newPlayer", player);

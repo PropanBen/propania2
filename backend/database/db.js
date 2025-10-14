@@ -1,6 +1,6 @@
 // server/database/db.js
-import mariadb from 'mariadb';
-import dotenv from 'dotenv';
+import mariadb from "mariadb";
+import dotenv from "dotenv";
 dotenv.config();
 
 export const pool = mariadb.createPool({
@@ -19,7 +19,7 @@ export async function query(sql, params = []) {
 		const res = await conn.query(sql, params);
 		return res;
 	} catch (err) {
-		console.error('DB Fehler:', err);
+		console.error("DB Fehler:", err);
 		throw err;
 	} finally {
 		if (conn) conn.release();
@@ -40,7 +40,7 @@ export async function withTransaction(fn) {
 				await conn.rollback();
 			} catch (_) {}
 		}
-		console.error('DB TX Fehler:', err);
+		console.error("DB TX Fehler:", err);
 		throw err;
 	} finally {
 		if (conn) conn.release();
@@ -50,10 +50,7 @@ export async function withTransaction(fn) {
 // --------- Spieler-Loading/Persistenz ----------
 export async function loadPlayerFromDB(playerId) {
 	try {
-		const rows = await query(
-			'SELECT id, name, money, exp, level, positionX, positionY FROM players WHERE id = ?',
-			[playerId]
-		);
+		const rows = await query("SELECT id, name, money, exp, level, positionX, positionY FROM players WHERE id = ?", [playerId]);
 
 		if (rows.length > 0) {
 			const row = rows[0];
@@ -69,7 +66,7 @@ export async function loadPlayerFromDB(playerId) {
 		}
 		return null;
 	} catch (err) {
-		console.error('DB Fehler:', err);
+		console.error("DB Fehler:", err);
 		throw err;
 	}
 }
@@ -81,7 +78,7 @@ export async function updatePlayer(playerData) {
 	const { money, exp, level, x, y, id } = playerData;
 
 	await query(
-		'UPDATE players SET money = COALESCE(?, money), exp = COALESCE(?, exp), level = COALESCE(?, level), positionX = COALESCE(?, positionX), positionY = COALESCE(?, positionY) WHERE id = ?',
+		"UPDATE players SET money = COALESCE(?, money), exp = COALESCE(?, exp), level = COALESCE(?, level), positionX = COALESCE(?, positionX), positionY = COALESCE(?, positionY) WHERE id = ?",
 		[money, exp, level, x, y, id]
 	);
 }
@@ -90,10 +87,7 @@ export async function updatePlayer(playerData) {
 
 // Stammdaten eines Items
 export async function loadItemDefById(itemId) {
-	const rows = await query(
-		'SELECT id, `key`, name, stackable FROM items WHERE id = ?',
-		[itemId]
-	);
+	const rows = await query("SELECT id, `key`, name, stackable FROM items WHERE id = ?", [itemId]);
 	if (!rows[0]) return null;
 	const r = rows[0];
 	return {
@@ -125,19 +119,13 @@ export async function loadWorldItems() {
 export async function createWorldItem(connOrNull, item_id, x, y, quantity = 1) {
 	const run = connOrNull ?? { query };
 	const res = await (connOrNull
-		? connOrNull.query(
-				'INSERT INTO world_items (item_id, x, y, quantity) VALUES (?, ?, ?, ?)',
-				[item_id, x, y, quantity]
-		  )
-		: query(
-				'INSERT INTO world_items (item_id, x, y, quantity) VALUES (?, ?, ?, ?)',
-				[item_id, x, y, quantity]
-		  ));
+		? connOrNull.query("INSERT INTO world_items (item_id, x, y, quantity) VALUES (?, ?, ?, ?)", [item_id, x, y, quantity])
+		: query("INSERT INTO world_items (item_id, x, y, quantity) VALUES (?, ?, ?, ?)", [item_id, x, y, quantity]));
 	const id = Number(res.insertId);
 
 	const itemDef = await (connOrNull
-		? connOrNull.query('SELECT `key`, name FROM items WHERE id = ?', [item_id])
-		: query('SELECT `key`, name FROM items WHERE id = ?', [item_id]));
+		? connOrNull.query("SELECT `key`, name FROM items WHERE id = ?", [item_id])
+		: query("SELECT `key`, name FROM items WHERE id = ?", [item_id]));
 
 	return {
 		id,
@@ -145,27 +133,21 @@ export async function createWorldItem(connOrNull, item_id, x, y, quantity = 1) {
 		x: Number(x),
 		y: Number(y),
 		quantity: Number(quantity),
-		key: itemDef[0]?.key ?? 'unknown',
+		key: itemDef[0]?.key ?? "unknown",
 		name: itemDef[0]?.name ?? `Item ${item_id}`,
 	};
 }
 
 export async function deleteWorldItem(conn, world_item_id) {
-	await conn.query('DELETE FROM world_items WHERE id = ?', [world_item_id]);
+	await conn.query("DELETE FROM world_items WHERE id = ?", [world_item_id]);
 }
 
 // Inventar holen/erzeugen
 export async function getOrCreateInventory(conn, ownerType, ownerId) {
-	const rows = await conn.query(
-		'SELECT id FROM inventories WHERE owner_type = ? AND owner_id = ?',
-		[ownerType, ownerId]
-	);
+	const rows = await conn.query("SELECT id FROM inventories WHERE owner_type = ? AND owner_id = ?", [ownerType, ownerId]);
 	if (rows.length > 0) return Number(rows[0].id);
 
-	const res = await conn.query(
-		'INSERT INTO inventories (owner_type, owner_id) VALUES (?, ?)',
-		[ownerType, ownerId]
-	);
+	const res = await conn.query("INSERT INTO inventories (owner_type, owner_id) VALUES (?, ?)", [ownerType, ownerId]);
 	return Number(res.insertId);
 }
 
@@ -203,44 +185,24 @@ export async function addItemToInventory(conn, inventoryId, itemId, quantity) {
 }
 
 // Menge aus Inventar entfernen (wirft bei Mangel)
-export async function removeItemFromInventory(
-	conn,
-	inventoryId,
-	itemId,
-	quantity
-) {
-	const rows = await conn.query(
-		'SELECT id, quantity FROM inventory_items WHERE inventory_id = ? AND item_id = ?',
-		[inventoryId, itemId]
-	);
+export async function removeItemFromInventory(conn, inventoryId, itemId, quantity) {
+	const rows = await conn.query("SELECT id, quantity FROM inventory_items WHERE inventory_id = ? AND item_id = ?", [inventoryId, itemId]);
 	if (rows.length === 0 || Number(rows[0].quantity) < quantity) {
-		throw new Error('Not enough quantity in inventory');
+		throw new Error("Not enough quantity in inventory");
 	}
 	const newQty = Number(rows[0].quantity) - quantity;
 	if (newQty === 0) {
-		await conn.query('DELETE FROM inventory_items WHERE id = ?', [
-			Number(rows[0].id),
-		]);
+		await conn.query("DELETE FROM inventory_items WHERE id = ?", [Number(rows[0].id)]);
 	} else {
-		await conn.query('UPDATE inventory_items SET quantity = ? WHERE id = ?', [
-			newQty,
-			Number(rows[0].id),
-		]);
+		await conn.query("UPDATE inventory_items SET quantity = ? WHERE id = ?", [newQty, Number(rows[0].id)]);
 	}
 }
 
 // Atomarer Move: Welt-Item -> Inventar
-export async function moveWorldItemToInventory(
-	world_item_id,
-	ownerType,
-	ownerId
-) {
+export async function moveWorldItemToInventory(world_item_id, ownerType, ownerId) {
 	return withTransaction(async (conn) => {
-		const wiRows = await conn.query(
-			'SELECT id, item_id, quantity FROM world_items WHERE id = ? FOR UPDATE',
-			[world_item_id]
-		);
-		if (wiRows.length === 0) throw new Error('World item not found');
+		const wiRows = await conn.query("SELECT id, item_id, quantity FROM world_items WHERE id = ? FOR UPDATE", [world_item_id]);
+		if (wiRows.length === 0) throw new Error("World item not found");
 
 		const item_id = Number(wiRows[0].item_id);
 		const quantity = Number(wiRows[0].quantity);
@@ -255,18 +217,33 @@ export async function moveWorldItemToInventory(
 }
 
 // Atomarer Move: Inventar -> Welt
-export async function moveInventoryItemToWorld(
-	ownerType,
-	ownerId,
-	itemId,
-	quantity,
-	x,
-	y
-) {
+export async function moveInventoryItemToWorld(ownerType, ownerId, itemId, quantity, x, y) {
 	return withTransaction(async (conn) => {
 		const invId = await getOrCreateInventory(conn, ownerType, ownerId);
 		await removeItemFromInventory(conn, invId, itemId, quantity);
 		const created = await createWorldItem(conn, itemId, x, y, quantity);
 		return created; // { id, item_id, x, y, quantity, key, name }
 	});
+}
+
+// Resources
+export async function loadResourcesDefinitions() {
+	const rows = await query("SELECT id, `key`, name,description,level FROM resources ;");
+	return rows.map((r) => ({
+		id: Number(r.id),
+		key: r.key,
+		name: r.name,
+		description: r.description,
+		level: Number(r.level),
+	}));
+}
+
+export async function loadWorldResources() {
+	const rows = await query(`SELECT id, resource_id, x, y FROM world_resources`);
+	return rows.map((r) => ({
+		id: Number(r.id),
+		resource_id: Number(r.resource_id),
+		x: Number(r.x),
+		y: Number(r.y),
+	}));
 }

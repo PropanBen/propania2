@@ -7,6 +7,7 @@ import { registerPlayerAnimations } from "../assets/utils/animations.js";
 
 import Item from "../entities/items.js";
 import Inventory from "../entities/inventory";
+import Resource from "../entities/resources.js";
 
 export default class GameScene extends Phaser.Scene {
 	constructor(data) {
@@ -31,7 +32,9 @@ export default class GameScene extends Phaser.Scene {
 		this.itemsGroup = this.physics.add.staticGroup(); // Welt-Items
 		this.itemsById = {}; // world_item_id -> Item Sprite
 		this.inventory = new Inventory(this);
-
+		this.resourcesDefinitions = {}; // resource_id -> { id, key, name }
+		this.resources = {};
+		this.resourcesGroup = this.physics.add.staticGroup();
 		this.buildingsGroup = this.physics.add.staticGroup();
 
 		registerPlayerAnimations(this);
@@ -61,6 +64,7 @@ export default class GameScene extends Phaser.Scene {
 			this
 		);
 
+		this.physics.add.collider(this.playerGroup, this.resourcesGroup);
 		this.physics.add.collider(this.playerGroup, this.buildingsGroup);
 
 		// HUD: Aufheben-Hinweis
@@ -118,6 +122,23 @@ export default class GameScene extends Phaser.Scene {
 			items.forEach((info) => this.spawnItem(info));
 		});
 
+		// === world:resources:init ===
+		this.socket.on("world:resources:init", (resources) => {
+			this.resourcesDefinitions = resources["resourcesDefinitions"];
+			this.resources = resources["worldResources"];
+
+			Object.values(this.resources).forEach((resource) => {
+				const def = this.resourcesDefinitions.find((x) => x.id === resource.resource_id);
+				if (def) {
+					resource.key = def.key ?? "Unknown";
+					resource.name = def.name ?? "Unknown";
+
+					const r = new Resource(this, resource);
+					this.resourcesGroup.add(r);
+				}
+			});
+		});
+
 		this.socket.on("item:spawned", (info) => {
 			this.spawnItem(info);
 		});
@@ -165,8 +186,7 @@ export default class GameScene extends Phaser.Scene {
 
 	tryPickup() {
 		if (!this.nearItemId) return;
-		console.log(this.nearItemId);
-		console.log(this.player_id);
+
 		this.socket.emit("item:pickup:request", {
 			world_item_id: this.nearItemId,
 			// server kann player_id aus players-Map nehmen; mitgeben ist okay:
@@ -241,7 +261,12 @@ export default class GameScene extends Phaser.Scene {
 	}
 
 	updateDepthSorting() {
-		const allSprites = [...Object.values(this.players), ...this.itemsGroup.getChildren(), ...this.buildingsGroup.getChildren()];
+		const allSprites = [
+			...Object.values(this.players),
+			...this.itemsGroup.getChildren(),
+			...this.buildingsGroup.getChildren(),
+			...this.resourcesGroup.getChildren(),
+		];
 
 		allSprites.sort((a, b) => {
 			// Nutze body y für Spieler, sonst sprite y
