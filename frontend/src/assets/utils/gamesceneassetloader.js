@@ -38,4 +38,7 @@ export function preloadAssets(scene) {
 
 	const dropsoundURL = new URL("../sounds/drop.mp3", import.meta.url).href;
 	scene.load.audio("drop", dropsoundURL);
+
+	const cuttingtreesoundURL = new URL("../sounds/cuttingtree.mp3", import.meta.url).href;
+	scene.load.audio("chop", cuttingtreesoundURL);
 }

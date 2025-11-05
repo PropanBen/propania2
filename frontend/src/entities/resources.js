@@ -34,6 +34,20 @@ export default class Resource extends Phaser.Physics.Arcade.Sprite {
 		return this;
 	}
 
+	gathering() {
+		this.scene.tweens.add({
+			targets: this,
+			y: this.y + 1,
+			duration: 100,
+			yoyo: true,
+			repeat: 0,
+			onComplete: () => {
+				const config = { delay: 0.4 };
+				this.scene.sound.play("chop", config);
+			},
+		});
+	}
+
 	destroy(fromScene) {
 		if (this.nameText) {
 			this.nameText.destroy();

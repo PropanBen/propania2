@@ -173,9 +173,22 @@ export default class GameScene extends Phaser.Scene {
 		const player = new Player(this, playerInfo, isLocal);
 		this.players[player.socket_id] = player;
 		this.playerGroup.add(player);
-		this.player = player;
-	}
 
+		if (isLocal) {
+			this.player = player;
+
+			this.physics.add.overlap(
+				player.actionzone,
+				this.resourcesGroup,
+				(zone, resource) => {
+					if (player.actionzoneTarget == resource) return;
+					player.actionzoneTarget = resource;
+				},
+				null,
+				this
+			);
+		}
+	}
 	spawnItem(info) {
 		// info: { id, item_id, key, name, x, y, quantity }
 		const item = new Item(this, info);
@@ -225,14 +238,29 @@ export default class GameScene extends Phaser.Scene {
 		}
 	}
 
+	chooseAction() {
+		if (this.nearItemId) return this.tryPickup();
+		if (this.player.actionzoneTarget != null) this.player.actionzoneTarget.gathering();
+		if (this.player.actionzoneTarget != null) return this.player.playActionAnimation("treecut", 1000);
+	}
+
 	update() {
+		if (!this.player) return;
+
+		if (this.player.actionzoneTarget) {
+			const touching = this.physics.overlap(this.player.actionzone, this.player.actionzoneTarget);
+			if (!touching) {
+				this.player.actionzoneTarget = null;
+			}
+		}
+
 		// Spieler-Update
 		if (this.players[this.socket.id]) {
 			this.players[this.socket.id].update();
 		}
 
 		// Eingaben
-		if (Phaser.Input.Keyboard.JustDown(this.keyE)) this.tryPickup();
+		if (Phaser.Input.Keyboard.JustDown(this.keyE)) this.chooseAction();
 		if (Phaser.Input.Keyboard.JustDown(this.keyQ)) this.tryDrop();
 		if (Phaser.Input.Keyboard.JustDown(this.keyI)) this.inventory.toggleUI();
 

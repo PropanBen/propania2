@@ -14,21 +14,29 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 		this.isLocalPlayer = isLocalPlayer;
 		this.x = playerInfo.x;
 		this.y = playerInfo.y;
+		this.actionzoneTarget = null;
 
 		scene.add.existing(this);
 		scene.physics.add.existing(this);
-		this.body.setSize(32, 16);
-		this.body.setOffset(16, 48);
+		this.body.setSize(16, 16);
+		this.body.setOffset(24, 48);
 		this.setDepth(15);
 
 		//this.setCollideWorldBounds(true);
 		this.setScale(2);
 
 		this.speed = 200;
-		this.runSpeed = 350; // Sprintgeschwindigkeit
+		this.runSpeed = 350;
 		this.currentAnim = playerInfo.anim || "idle_down";
 		this.lastDirection = "down";
 		this.state = "idle";
+
+		this.actionzoneOffset = { x: 10, y: 10 };
+		this.actionzone = this.scene.add.rectangle(this.x + this.actionzoneOffset.x, this.y + this.actionzoneOffset.y, 32, 32, 0xffffff, 0.5);
+		this.actionzone.setAlpha(0);
+
+		this.scene.physics.add.existing(this.actionzone, false);
+		this.actionzone.setDepth(11);
 
 		this.nameText = scene.add
 			.text(this.x, this.y - 40, this.name, {
@@ -138,6 +146,9 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 			return; // Szene ist schon zerstört -> nichts mehr machen
 		}
 
+		this.actionzone.setPosition(this.x + this.actionzoneOffset.x, this.y + this.actionzoneOffset.y - 15);
+		this.setActionzoneDirection(this.actionzone, this.lastDirection);
+
 		if (this.isLocalPlayer) {
 			// Kamera-Update
 			this.updateCameraControls();
@@ -217,6 +228,21 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 				this.currentAnim = idleAnim;
 			}
 		});
+	}
+
+	setActionzoneDirection(actionzone, direction) {
+		const offsets = {
+			left: { x: -32, y: 64 },
+			right: { x: 32, y: 64 },
+			up: { x: 0, y: 24 },
+			down: { x: 0, y: 96 },
+		};
+
+		if (offsets[direction]) {
+			this.actionzoneOffset = offsets[direction];
+		}
+
+		actionzone.setDepth(direction === "up" ? 8 : 11);
 	}
 
 	updateCameraControls() {
