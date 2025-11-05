@@ -13,6 +13,6 @@
 	"prettier.arrowParens": "avoid",
 	"prettier.trailingComma": "es5",
 	"prettier.bracketSpacing": true,
-	"editor.fontFamily": "Pixel Code",
+	"editor.fontFamily": "Verdana",
 	"editor.fontSize": 20
 }
