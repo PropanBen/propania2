@@ -11,12 +11,13 @@ export default class Resource extends Phaser.Physics.Arcade.Sprite {
 		this.resource_id = resource.resource_id;
 		this.key = resource.key;
 		this.name = resource.name;
-		this.setOrigin(0.5, 0.5);
+		this.setOrigin(0.5, 1);
 		scene.add.existing(this);
 		scene.physics.add.existing(this, true); // static body
 		this.setDepth(11);
 		this.body.setSize(40, 40);
 		this.body.setOffset(this.width - this.width / 2 - 20, 235);
+		this.hitcounter = 3;
 
 		// Label
 		this.nameText = scene.add
@@ -35,6 +36,8 @@ export default class Resource extends Phaser.Physics.Arcade.Sprite {
 	}
 
 	gathering() {
+		const config = { delay: 0.4 };
+		this.scene.sound.play("chop", config);
 		this.scene.tweens.add({
 			targets: this,
 			y: this.y + 1,
@@ -42,11 +45,33 @@ export default class Resource extends Phaser.Physics.Arcade.Sprite {
 			yoyo: true,
 			repeat: 0,
 			onComplete: () => {
-				const config = { delay: 0.4 };
-				this.scene.sound.play("chop", config);
+				this.hitcounter -= 1;
+				if (this.hitcounter <= 0) {
+					this.remove();
+				}
 			},
 		});
 	}
+
+	remove() {
+		this.body.enable = false;
+		this.scene.sound.play("treefall");
+		this.scene.tweens.add({
+			targets: this,
+			angle: 90,
+			duration: 3000,
+			ease: "Cubic.easeIn",
+			onComplete: () => {
+				this.scene.sound.play("treefalldown");
+				this.body.enable = false;
+				this.scene.time.delayedCall(1000, () => {
+					this.scene.socket.emit("world:resources:remove", { world_resource_id: this.world_resource_id });
+				});
+			},
+		});
+	}
+
+	spanwnItems() {}
 
 	destroy(fromScene) {
 		if (this.nameText) {

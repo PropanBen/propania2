@@ -109,7 +109,7 @@ export function initGameServer(io) {
 		/**
 		 * Item-Pickup: Welt -> Inventar
 		 */
-		socket.on("item:pickup:request", async ({ world_item_id }) => {
+		socket.on("item:pickup:request", async ({ world_item_id, actionzone }) => {
 			try {
 				const player = players.get(socket.id);
 				if (!player) return;
@@ -121,8 +121,8 @@ export function initGameServer(io) {
 				}
 
 				// Distanz-Check (Server-seitig)
-				const dx = (player.x ?? 0) - wi.x;
-				const dy = (player.y ?? 0) - wi.y;
+				const dx = (actionzone.x ?? 0) - wi.x;
+				const dy = (actionzone.y ?? 0) - wi.y;
 				const dist2 = dx * dx + dy * dy;
 				const pickupRange = 64;
 				if (dist2 > pickupRange * pickupRange) {
@@ -172,6 +172,11 @@ export function initGameServer(io) {
 				console.error("item:drop:request error", err);
 				socket.emit("item:error", { message: err.message ?? "Drop failed" });
 			}
+		});
+
+		socket.on("world:resources:remove", async ({ world_resource_id }) => {
+			delete worldResources[world_resource_id];
+			io.emit("world:resources:update", world_resource_id);
 		});
 
 		/**

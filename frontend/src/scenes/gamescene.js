@@ -48,22 +48,6 @@ export default class GameScene extends Phaser.Scene {
 
 		// Kollisionen
 		this.physics.add.collider(this.playerGroup, this.playerGroup);
-		// Overlap Spieler<->Items: nur lokaler Spieler darf UI zeigen/aufheben
-		this.physics.add.overlap(
-			this.playerGroup,
-			this.itemsGroup,
-			(playerSprite, itemSprite) => {
-				if (!playerSprite.isLocalPlayer) return;
-				this.nearItemId = itemSprite.world_item_id;
-				this.interactText
-					.setText("[E] Aufheben")
-					.setPosition(itemSprite.x, itemSprite.y - 30)
-					.setVisible(true);
-			},
-			null,
-			this
-		);
-
 		this.physics.add.collider(this.playerGroup, this.resourcesGroup);
 		this.physics.add.collider(this.playerGroup, this.buildingsGroup);
 
@@ -167,6 +151,14 @@ export default class GameScene extends Phaser.Scene {
 
 		// Nach Verbindung -> Init anfordern
 		this.socket.emit("world:init:request", { player_id: this.player_id });
+
+		this.socket.on("world:resources:update", (world_resource_id) => {
+			const toRemove = this.resourcesGroup.getChildren().find((r) => r.world_resource_id === world_resource_id);
+			if (toRemove) {
+				toRemove.destroy();
+			}
+			this.resources = this.resources.filter((r) => r.id !== world_resource_id);
+		});
 	}
 
 	addPlayer(playerInfo, isLocal) {
@@ -187,6 +179,20 @@ export default class GameScene extends Phaser.Scene {
 				null,
 				this
 			);
+
+			this.physics.add.overlap(
+				this.player.actionzone,
+				this.itemsGroup,
+				(actionzone, itemSprite) => {
+					this.nearItemId = itemSprite.world_item_id;
+					this.interactText
+						.setText("[E] Aufheben")
+						.setPosition(itemSprite.x, itemSprite.y - 30)
+						.setVisible(true);
+				},
+				null,
+				this
+			);
 		}
 	}
 	spawnItem(info) {
@@ -202,8 +208,8 @@ export default class GameScene extends Phaser.Scene {
 
 		this.socket.emit("item:pickup:request", {
 			world_item_id: this.nearItemId,
-			// server kann player_id aus players-Map nehmen; mitgeben ist okay:
 			player_id: this.player_id,
+			actionzone: this.player.actionzone,
 		});
 		this.interactText.setVisible(false);
 		this.nearItemId = null;
@@ -240,7 +246,6 @@ export default class GameScene extends Phaser.Scene {
 
 	chooseAction() {
 		if (this.nearItemId) return this.tryPickup();
-		if (this.player.actionzoneTarget != null) this.player.actionzoneTarget.gathering();
 		if (this.player.actionzoneTarget != null) return this.player.playActionAnimation("treecut", 1000);
 	}
 
@@ -266,7 +271,7 @@ export default class GameScene extends Phaser.Scene {
 
 		// Interact-Hinweis verstecken, wenn man sich entfernt
 		if (this.nearItemId) {
-			const you = this.players[this.socket.id];
+			const you = this.player.actionzone;
 			const item = this.itemsById[this.nearItemId];
 			if (!you || !item) {
 				this.interactText.setVisible(false);

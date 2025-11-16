@@ -15,6 +15,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 		this.x = playerInfo.x;
 		this.y = playerInfo.y;
 		this.actionzoneTarget = null;
+		this.actionanimstarted = false;
 
 		scene.add.existing(this);
 		scene.physics.add.existing(this);
@@ -212,22 +213,30 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 		}
 	}
 
-	playActionAnimation(animKey, duration = 500) {
-		this.state = "action";
-		this.setVelocity(0, 0);
-
-		const fullAnimKey = animKey + "_" + this.lastDirection;
-		this.play(fullAnimKey, true);
-		this.currentAnim = fullAnimKey; // wichtig!
-
-		this.scene.time.delayedCall(duration, () => {
-			if (this.state === "action") {
-				this.state = "idle";
-				const idleAnim = `idle_${this.lastDirection}`;
-				this.play(idleAnim, true);
-				this.currentAnim = idleAnim;
+	playActionAnimation(animKey, duration = 100) {
+		if (!this.actionanimstarted) {
+			this.actionanimstarted = true;
+			if (animKey === "treecut" && this.actionzoneTarget) {
+				this.actionzoneTarget.gathering();
 			}
-		});
+
+			this.state = "action";
+			this.setVelocity(0, 0);
+
+			const fullAnimKey = animKey + "_" + this.lastDirection;
+			this.play(fullAnimKey, true);
+			this.currentAnim = fullAnimKey; // wichtig!
+
+			this.scene.time.delayedCall(duration, () => {
+				if (this.state === "action") {
+					this.state = "idle";
+					const idleAnim = `idle_${this.lastDirection}`;
+					this.play(idleAnim, true);
+					this.currentAnim = idleAnim;
+					this.actionanimstarted = false;
+				}
+			});
+		}
 	}
 
 	setActionzoneDirection(actionzone, direction) {
