@@ -1,5 +1,5 @@
-import Phaser from 'phaser';
-import itemsList from '../entities/itemslist.js';
+import Phaser from "phaser";
+import itemsList from "../entities/itemslist.js";
 
 export default class Item extends Phaser.Physics.Arcade.Sprite {
 	constructor(scene, info) {
@@ -10,13 +10,13 @@ export default class Item extends Phaser.Physics.Arcade.Sprite {
 			console.warn(`Item key "${info.key}" nicht in itemslist.js gefunden.`);
 		}
 
-		super(scene, info.x, info.y, 'items', itemData?.frame ?? 0);
+		super(scene, info.x, info.y, "items", itemData?.frame ?? 0);
 
 		this.scene = scene;
 		this.world_item_id = info.id;
 		this.item_id = info.item_id;
 		this.item_key = info.key;
-		this.name = info.name ?? itemData?.name ?? 'Unknown';
+		this.name = info.name ?? itemData?.name ?? "Unknown";
 		this.quantity = info.quantity ?? 1;
 
 		scene.add.existing(this);
@@ -27,10 +27,12 @@ export default class Item extends Phaser.Physics.Arcade.Sprite {
 		this.normalizeSize(32, 32);
 
 		// Optional: kleines Label
+		/*
 		this.nameText = scene.add
 			.text(this.x, this.y - 18, this.name, { fontSize: '12px', color: '#fff' })
 			.setOrigin(0.5);
 		this.nameText.setDepth(1000);
+		*/
 	}
 
 	normalizeSize(targetWidth, targetHeight) {
@@ -39,10 +41,7 @@ export default class Item extends Phaser.Physics.Arcade.Sprite {
 		const scale = Math.min(scaleX, scaleY);
 		this.setScale(scale);
 		this.body.setSize(this.width * scale, this.height * scale);
-		this.body.setOffset(
-			(this.width - this.width * scale) / 2,
-			(this.height - this.height * scale) / 2
-		);
+		this.body.setOffset((this.width - this.width * scale) / 2, (this.height - this.height * scale) / 2);
 	}
 
 	setPosition(x, y) {

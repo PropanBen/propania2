@@ -20,10 +20,14 @@ export function registerPlayerAnimations(scene) {
 		{ key: "drop_left", row: 13, startColumn: 0, endColumn: 3, frameRate: 5, repeat: 0 },
 		{ key: "drop_up", row: 12, startColumn: 0, endColumn: 3, frameRate: 5, repeat: 0 },
 		{ key: "drop_down", row: 14, startColumn: 0, endColumn: 3, frameRate: 5, repeat: 0 },
-		{ key: "treecut_up", row: 54, startColumn: 5, endColumn: 0, frameRate: 6, repeat: 0 },
-		{ key: "treecut_down", row: 55, startColumn: 4, endColumn: 0, frameRate: 6, repeat: 0 },
-		{ key: "treecut_left", row: 56, startColumn: 4, endColumn: 0, frameRate: 6, repeat: 0 },
-		{ key: "treecut_right", row: 57, startColumn: 4, endColumn: 0, frameRate: 6, repeat: 0 },
+		{ key: "tree_up", row: 54, startColumn: 5, endColumn: 0, frameRate: 6, repeat: 0 },
+		{ key: "tree_down", row: 55, startColumn: 4, endColumn: 0, frameRate: 6, repeat: 0 },
+		{ key: "tree_left", row: 56, startColumn: 4, endColumn: 0, frameRate: 6, repeat: 0 },
+		{ key: "tree_right", row: 57, startColumn: 4, endColumn: 0, frameRate: 6, repeat: 0 },
+		{ key: "rock_up", row: 58, startColumn: 4, endColumn: 0, frameRate: 6, repeat: 0 },
+		{ key: "rock_down", row: 59, startColumn: 4, endColumn: 0, frameRate: 6, repeat: 0 },
+		{ key: "rock_left", row: 60, startColumn: 4, endColumn: 0, frameRate: 6, repeat: 0 },
+		{ key: "rock_right", row: 61, startColumn: 4, endColumn: 0, frameRate: 6, repeat: 0 },
 	];
 
 	animations.forEach((anim) => {

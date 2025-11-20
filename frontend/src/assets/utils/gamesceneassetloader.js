@@ -25,6 +25,10 @@ export function preloadAssets(scene) {
 	const treeUrl = new URL("../resources/tree.png", import.meta.url).href;
 	scene.load.image("tree", treeUrl);
 
+	// Resources
+	const RockUrl = new URL("../resources/rock.png", import.meta.url).href;
+	scene.load.image("rock", RockUrl);
+
 	const mushroomURL = new URL("../items/mushroom.png", import.meta.url).href;
 	scene.load.image("mushroom", mushroomURL, {
 		frameWidth: 32,
@@ -47,4 +51,10 @@ export function preloadAssets(scene) {
 
 	const treefalldownURL = new URL("../sounds/treefalldown.mp3", import.meta.url).href;
 	scene.load.audio("treefalldown", treefalldownURL);
+
+	const pickaxeURL = new URL("../sounds/pickaxe.mp3", import.meta.url).href;
+	scene.load.audio("pickaxe", pickaxeURL);
+
+	const rockbreaksURL = new URL("../sounds/rockbreaks.mp3", import.meta.url).href;
+	scene.load.audio("rockbreaks", rockbreaksURL);
 }

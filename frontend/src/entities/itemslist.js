@@ -8,7 +8,8 @@ const itemsList = [
 	{ key: "potion", name: "Health Potion", frame: 2 },
 	{ key: "sword", name: "Sword", frame: 3 },
 	{ key: "shield", name: "Shield", frame: 4 },
-	{ key: "log", name: "Log", frame: 0 },
+	{ key: "log", name: "Log", frame: 3 },
+	{ key: "stone", name: "Stone", frame: 11 },
 	// ...weitere Items hier hinzufügen
 ];
 

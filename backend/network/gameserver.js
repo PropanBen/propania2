@@ -8,6 +8,9 @@ import {
 	loadInventory,
 	loadResourcesDefinitions,
 	loadWorldResources,
+	addWorldItembyKey,
+	removeItemFromInventory,
+	RemoveWorldResourceById,
 } from "../database/db.js";
 
 export function initGameServer(io) {
@@ -176,7 +179,16 @@ export function initGameServer(io) {
 
 		socket.on("world:resources:remove", async ({ world_resource_id }) => {
 			delete worldResources[world_resource_id];
+			//	RemoveWorldResourceById(world_resource_id);
 			io.emit("world:resources:update", world_resource_id);
+		});
+
+		socket.on("world:item:spawn:request", async ({ amount, itemkey, x, y }) => {
+			await addWorldItembyKey(itemkey, amount, x, y);
+			worldItems.clear();
+			const items = await loadWorldItems();
+			items.forEach((it) => worldItems.set(it.id, it));
+			socket.emit("world:items:init", Array.from(worldItems.values()));
 		});
 
 		/**

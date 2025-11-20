@@ -1,6 +1,7 @@
 // server/database/db.js
 import mariadb from "mariadb";
 import dotenv from "dotenv";
+import Functions from "../utils/functions.js";
 dotenv.config();
 
 export const pool = mariadb.createPool({
@@ -236,6 +237,32 @@ export async function loadResourcesDefinitions() {
 		description: r.description,
 		level: Number(r.level),
 	}));
+}
+
+//Items
+
+export async function LoadItemIDbyKey(itemkey) {
+	const rows = await query("SELECT id FROM items WHERE `key` = ?;", [itemkey]);
+	if (rows.length > 0) {
+		return Number(rows[0].id);
+	}
+}
+
+export async function addWorldItembyKey(itemkey, amount, x, y, quantity = 1) {
+	for (let i = 0; i < amount; i++) {
+		const item_id = await LoadItemIDbyKey(itemkey);
+		await createWorldItem(null, item_id, x + Functions.randomFloatRange(-50, +50), y + Functions.randomFloatRange(-50, +50), quantity);
+	}
+}
+
+export async function RemoveWorldResourceById(world_resource_id) {
+	try {
+		await query("DELETE FROM world_resources WHERE id = ?", [world_resource_id]);
+		return true;
+	} catch (err) {
+		console.error("DB Fehler:", err);
+		throw err;
+	}
 }
 
 export async function loadWorldResources() {

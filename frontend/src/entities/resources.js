@@ -1,5 +1,6 @@
 // === Resource.js ===
 import Phaser from "phaser";
+import Item from "./items.js";
 
 export default class Resource extends Phaser.Physics.Arcade.Sprite {
 	constructor(scene, resource) {
@@ -15,11 +16,19 @@ export default class Resource extends Phaser.Physics.Arcade.Sprite {
 		scene.add.existing(this);
 		scene.physics.add.existing(this, true); // static body
 		this.setDepth(11);
-		this.body.setSize(40, 40);
-		this.body.setOffset(this.width - this.width / 2 - 20, 235);
 		this.hitcounter = 3;
 
+		if (resource.key === "tree") {
+			this.body.setSize(40, 20);
+			this.body.setOffset((this.width - 40) / 2, this.height - 20);
+		} else if (resource.key === "rock") {
+			this.setScale(2, 2);
+			this.body.setSize(64, 20);
+			this.body.setOffset(-16, 5);
+		}
+
 		// Label
+		/*
 		this.nameText = scene.add
 			.text(this.x, this.y - 18, this.name, {
 				fontSize: "12px",
@@ -27,6 +36,8 @@ export default class Resource extends Phaser.Physics.Arcade.Sprite {
 			})
 			.setOrigin(0.5);
 		this.nameText.setDepth(1000);
+
+		*/
 	}
 
 	setPosition(x, y) {
@@ -35,7 +46,7 @@ export default class Resource extends Phaser.Physics.Arcade.Sprite {
 		return this;
 	}
 
-	gathering() {
+	gathering_tree() {
 		const config = { delay: 0.4 };
 		this.scene.sound.play("chop", config);
 		this.scene.tweens.add({
@@ -47,13 +58,47 @@ export default class Resource extends Phaser.Physics.Arcade.Sprite {
 			onComplete: () => {
 				this.hitcounter -= 1;
 				if (this.hitcounter <= 0) {
-					this.remove();
+					this.remove_tree();
 				}
 			},
 		});
 	}
 
-	remove() {
+	gathering_rock() {
+		const config = { delay: 0.4 };
+		this.scene.sound.play("pickaxe", config);
+		this.scene.tweens.add({
+			targets: this,
+			y: this.y + 1,
+			duration: 100,
+			yoyo: true,
+			repeat: 0,
+			onComplete: () => {
+				this.hitcounter -= 1;
+				if (this.hitcounter <= 0) {
+					this.remove_rock();
+				}
+			},
+		});
+	}
+
+	spanwnItems(amount) {
+		let itemkey = "";
+		if (this.key === "tree") {
+			itemkey = "log";
+		} else if (this.key === "rock") {
+			itemkey = "stone";
+		}
+
+		this.scene.socket.emit("world:item:spawn:request", {
+			amount: amount,
+			itemkey: itemkey,
+			x: this.x,
+			y: this.y,
+		});
+	}
+
+	remove_tree() {
 		this.body.enable = false;
 		this.scene.sound.play("treefall");
 		this.scene.tweens.add({
@@ -66,12 +111,39 @@ export default class Resource extends Phaser.Physics.Arcade.Sprite {
 				this.body.enable = false;
 				this.scene.time.delayedCall(1000, () => {
 					this.scene.socket.emit("world:resources:remove", { world_resource_id: this.world_resource_id });
+					this.spanwnItems(3);
+					const config = { delay: 0.4 };
+					this.scene.sound.play("pop", config);
 				});
 			},
 		});
 	}
 
-	spanwnItems() {}
+	remove_rock() {
+		this.body.enable = false;
+
+		this.scene.tweens.add({
+			targets: this,
+			duration: 100,
+			repeat: 4,
+			yoyo: true,
+			angle: { from: -5, to: 5 },
+			ease: "Sine.inOut",
+			onComplete: () => {
+				this.breakRock();
+			},
+		});
+	}
+
+	breakRock() {
+		this.scene.sound.play("rockbreaks");
+
+		this.scene.time.delayedCall(0, () => {
+			this.scene.socket.emit("world:resources:remove", { world_resource_id: this.world_resource_id });
+			this.spanwnItems(3);
+			this.scene.sound.play("pop", { delay: 0.2 });
+		});
+	}
 
 	destroy(fromScene) {
 		if (this.nameText) {

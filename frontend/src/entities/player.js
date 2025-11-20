@@ -147,6 +147,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 			return; // Szene ist schon zerstört -> nichts mehr machen
 		}
 
+		if (this.actionzoneTarget) console.log("Target :", this.actionzoneTarget.key);
 		this.actionzone.setPosition(this.x + this.actionzoneOffset.x, this.y + this.actionzoneOffset.y - 15);
 		this.setActionzoneDirection(this.actionzone, this.lastDirection);
 
@@ -216,8 +217,11 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 	playActionAnimation(animKey, duration = 100) {
 		if (!this.actionanimstarted) {
 			this.actionanimstarted = true;
-			if (animKey === "treecut" && this.actionzoneTarget) {
-				this.actionzoneTarget.gathering();
+			if (animKey === "tree" && this.actionzoneTarget) {
+				this.actionzoneTarget.gathering_tree();
+			}
+			if (animKey === "rock" && this.actionzoneTarget) {
+				this.actionzoneTarget.gathering_rock();
 			}
 
 			this.state = "action";

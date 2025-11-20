@@ -103,6 +103,7 @@ export default class GameScene extends Phaser.Scene {
 
 		// Welt-Items initial + Live-Änderungen
 		this.socket.on("world:items:init", (items) => {
+			this.itemsGroup.clear(true, true);
 			items.forEach((info) => this.spawnItem(info));
 		});
 
@@ -200,6 +201,7 @@ export default class GameScene extends Phaser.Scene {
 		const item = new Item(this, info);
 		this.itemsGroup.add(item);
 		this.itemsById[item.world_item_id] = item;
+
 		return item;
 	}
 
@@ -246,7 +248,7 @@ export default class GameScene extends Phaser.Scene {
 
 	chooseAction() {
 		if (this.nearItemId) return this.tryPickup();
-		if (this.player.actionzoneTarget != null) return this.player.playActionAnimation("treecut", 1000);
+		if (this.player.actionzoneTarget != null) return this.player.playActionAnimation(this.player.actionzoneTarget.key, 1000);
 	}
 
 	update() {
