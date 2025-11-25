@@ -1,4 +1,7 @@
 import React, { useState } from "react";
+import bg from "./assets/ui/login-background.png";
+import lb from "./assets/ui/login-button.png";
+import p2 from "./assets/ui/propania2.png";
 
 export default function Login({ onLogin }) {
 	const [email, setEmail] = useState("");
@@ -75,8 +78,20 @@ export default function Login({ onLogin }) {
 				justifyContent: "center",
 				height: "100vh",
 				backgroundColor: "rgba(0,0,0,0.1)",
+				backgroundImage: `url(${bg})`,
+				backgroundSize: "cover",
+				backgroundPosition: "center",
+				flexDirection: "column",
 			}}
 		>
+			<img
+				src={p2}
+				alt="Bild"
+				style={{
+					width: "200px",
+					height: "auto",
+				}}
+			/>
 			<form
 				onSubmit={handleLogin}
 				style={{
@@ -89,6 +104,8 @@ export default function Login({ onLogin }) {
 					width: "90%",
 					maxWidth: "400px",
 					boxShadow: "0 4px 15px rgba(0,0,0,0.2)",
+					backgroundColor: "burlywood",
+					border: "2px solid #000000ff",
 				}}
 			>
 				<input
@@ -120,8 +137,8 @@ export default function Login({ onLogin }) {
 						padding: "0.75rem",
 						borderRadius: "8px",
 						border: "none",
-						backgroundColor: "#4f46e5",
-						color: "white",
+						backgroundColor: "#856945ff",
+						color: "black",
 						fontWeight: "bold",
 						cursor: "pointer",
 						opacity: loading ? 0.6 : 1,
@@ -137,14 +154,14 @@ export default function Login({ onLogin }) {
 						padding: "0.75rem",
 						borderRadius: "8px",
 						border: "none",
-						backgroundColor: "#10b981",
-						color: "white",
+						backgroundColor: "#856945ff",
+						color: "black",
 						fontWeight: "bold",
 						cursor: "pointer",
 						opacity: loading ? 0.6 : 1,
 					}}
 				>
-					{loading ? "Registrieren..." : "Registrieren"}
+					{loading ? "Registrieren..." : "Register"}
 				</button>
 			</form>
 		</div>

@@ -1,0 +1,10 @@
+@font-face {
+	font-family: "PerryGothic";
+	src: url("./assets/fonts/PERRYGOT.TTF") format("truetype");
+	font-weight: normal;
+	font-style: normal;
+}
+
+* {
+	font-family: "PerryGothic", sans-serif;
+}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Login from "./login.jsx";
 import { startGame, destroyGame } from "./game.jsx";
+import "./App.css";
 
 function App() {
 	const [account, setAccount] = useState(null);
