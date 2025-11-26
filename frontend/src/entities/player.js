@@ -147,7 +147,6 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 			return; // Szene ist schon zerstört -> nichts mehr machen
 		}
 
-		if (this.actionzoneTarget) console.log("Target :", this.actionzoneTarget.key);
 		this.actionzone.setPosition(this.x + this.actionzoneOffset.x, this.y + this.actionzoneOffset.y - 15);
 		this.setActionzoneDirection(this.actionzone, this.lastDirection);
 

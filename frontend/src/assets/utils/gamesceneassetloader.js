@@ -35,6 +35,11 @@ export function preloadAssets(scene) {
 		frameHeight: 32,
 	});
 
+	//UI
+	// Resources
+	const arrow_downUrl = new URL("../ui/arrow_down.png", import.meta.url).href;
+	scene.load.image("arrow_down", arrow_downUrl);
+
 	// Sounds
 
 	const popsoundURL = new URL("../sounds/pop.mp3", import.meta.url).href;

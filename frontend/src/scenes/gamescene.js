@@ -18,6 +18,7 @@ export default class GameScene extends Phaser.Scene {
 	init(data) {
 		this.player_id = data?.player_id ?? null;
 		this.account_id = data?.account_id ?? null;
+		this.scene.launch("UIScene");
 	}
 
 	preload() {
@@ -32,6 +33,7 @@ export default class GameScene extends Phaser.Scene {
 		this.itemsGroup = this.physics.add.staticGroup(); // Welt-Items
 		this.itemsById = {}; // world_item_id -> Item Sprite
 		this.inventory = new Inventory(this);
+		this.inventory.initUI(this.scene.get("UIScene"));
 		this.resourcesDefinitions = {}; // resource_id -> { id, key, name }
 		this.resources = {};
 		this.resourcesGroup = this.physics.add.staticGroup();
@@ -226,14 +228,13 @@ export default class GameScene extends Phaser.Scene {
 		this.sound.play("pop", config);
 	}
 
-	tryDrop() {
+	tryDrop(item) {
 		const you = this.players[this.socket.id];
 		if (!you) return;
-		const it = this.inventory.getFirstDroppableItem();
-		if (!it) return;
+		if (!item) return;
 		const dropPosition = you.setDropPostion(you.lastDirection);
 		this.socket.emit("item:drop:request", {
-			item_id: it.item_id,
+			item_id: item.item_id,
 			quantity: 1,
 			dropPosition,
 			player_id: this.player_id,
@@ -268,7 +269,7 @@ export default class GameScene extends Phaser.Scene {
 
 		// Eingaben
 		if (Phaser.Input.Keyboard.JustDown(this.keyE)) this.chooseAction();
-		if (Phaser.Input.Keyboard.JustDown(this.keyQ)) this.tryDrop();
+		if (Phaser.Input.Keyboard.JustDown(this.keyQ)) this.tryDrop(this.inventory.items[0]);
 		if (Phaser.Input.Keyboard.JustDown(this.keyI)) this.inventory.toggleUI();
 
 		// Interact-Hinweis verstecken, wenn man sich entfernt
@@ -290,9 +291,6 @@ export default class GameScene extends Phaser.Scene {
 		}
 		// Spieler und Items nach Y sortieren
 		this.updateDepthSorting();
-
-		// Inventar-UI Position anpassen
-		this.inventory.setInventoryPosition(16, 16);
 	}
 
 	updateDepthSorting() {

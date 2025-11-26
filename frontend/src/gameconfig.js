@@ -1,6 +1,3 @@
-import GameScene from "./scenes/gamescene.js";
-import SelectPlayerScene from "./scenes/playerselectscene.js";
-
 export const gameConfig = {
 	type: Phaser.AUTO,
 	width: window.innerWidth,
@@ -12,7 +9,6 @@ export const gameConfig = {
 		mode: Phaser.Scale.RESIZE, // Passt das Spiel an die Fenstergröße an
 		autoCenter: Phaser.Scale.CENTER_BOTH, // Zentriert das Spiel
 	},
-	scene: [SelectPlayerScene, GameScene],
 	physics: {
 		default: "arcade",
 		arcade: {

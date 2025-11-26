@@ -100,7 +100,7 @@ export default function Login({ onLogin }) {
 					gap: "1rem",
 					padding: "2rem",
 					borderRadius: "12px",
-					backgroundColor: "white",
+					color: "white",
 					width: "90%",
 					maxWidth: "400px",
 					boxShadow: "0 4px 15px rgba(0,0,0,0.2)",

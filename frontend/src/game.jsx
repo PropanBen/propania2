@@ -1,8 +1,9 @@
 // game.js
-import Phaser from 'phaser';
-import { gameConfig } from './gameconfig.js';
-import PlayerSelectScene from './scenes/playerselectscene.js';
-import GameScene from './scenes/gamescene.js';
+import Phaser from "phaser";
+import { gameConfig } from "./gameconfig.js";
+import PlayerSelectScene from "./scenes/playerselectscene.js";
+import GameScene from "./scenes/gamescene.js";
+import UIScene from "./scenes/uiscene.js";
 
 let phaserGame = null;
 
@@ -16,11 +17,8 @@ export const startGame = (account_id) => {
 	// Phaser ins #game-container mounten
 	const configWithData = {
 		...gameConfig,
-		parent: 'game-container', // <--- wichtig!
-		scene: [
-			new PlayerSelectScene({ account_id }),
-			new GameScene({ account_id }),
-		],
+		parent: "game-container", // <--- wichtig!
+		scene: [new PlayerSelectScene({ account_id }), new GameScene({ account_id }), new UIScene({ account_id })],
 	};
 
 	phaserGame = new Phaser.Game(configWithData);
@@ -33,7 +31,7 @@ export const destroyGame = () => {
 		phaserGame = null;
 
 		// optional: Container leeren
-		const container = document.getElementById('game-container');
-		if (container) container.innerHTML = '';
+		const container = document.getElementById("game-container");
+		if (container) container.innerHTML = "";
 	}
 };
