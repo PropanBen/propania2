@@ -11,8 +11,8 @@ export default function Login({ onLogin }) {
 	// Dynamisch je nach env
 	const API_URL =
 		import.meta.env.VITE_APP_ENV === "production"
-			? import.meta.env.VITE_API_URL
-			: `${import.meta.env.VITE_API_PROTOKOLL}://${import.meta.env.VITE_HOST_SERVER}:${import.meta.env.VITE_API_PORT}`;
+			? `https://${import.meta.env.VITE_API_URL}` // nur hier einmal https hinzufügen
+			: `${import.meta.env.VITE_HOST_SERVER}:${import.meta.env.VITE_API_PORT}`;
 
 	const handleLogin = async (e) => {
 		e.preventDefault();

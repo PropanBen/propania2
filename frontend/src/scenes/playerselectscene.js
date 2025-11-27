@@ -24,8 +24,8 @@ export default class PlayerSelectScene extends Phaser.Scene {
 		// 🔹 Dynamische API URL über .env
 		const API_URL =
 			import.meta.env.VITE_APP_ENV === "production"
-				? import.meta.env.VITE_API_URL
-				: `${import.meta.env.VITE_API_PROTOKOLL}://${import.meta.env.VITE_HOST_SERVER}:${import.meta.env.VITE_API_PORT}`;
+				? `https://${import.meta.env.VITE_API_URL}` // nur hier einmal https hinzufügen
+				: `${import.meta.env.VITE_HOST_SERVER}:${import.meta.env.VITE_API_PORT}`;
 
 		try {
 			const res = await fetch(`${API_URL}/api/players`, {

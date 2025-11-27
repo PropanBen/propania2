@@ -31,7 +31,6 @@ export default class UIScene extends Phaser.Scene {
 		this.moneyText = this.add.text(60, 120, "0", Functions.defaultTextStyle);
 		this.lvlText = this.add.text(60, 170, "1", Functions.defaultTextStyle);
 
-		// Jetzt wieder problemlos möglich:
 		ebtn.setInteractive({ useHandCursor: true });
 		qbtn.setInteractive({ useHandCursor: true });
 		plusbtn.setInteractive({ useHandCursor: true });
@@ -80,22 +79,24 @@ export default class UIScene extends Phaser.Scene {
 	createJoystick() {
 		const radius = 80;
 		const innerRadius = 40;
-		const cx = 150;
-		const cy = this.cameras.main.height - 150;
+
+		// Position relativ zur Canvas-Größe
+		const cx = this.cameras.main.width * 0.2 - 50; // 20% von links
+		const cy = this.cameras.main.height * 0.8; // 80% von oben
 
 		// --------------------------
-		//  REPLACED CIRCLES WITH GRAPHICS
+		//  GRAPHICS JOYSTICK
 		// --------------------------
 
 		// Outer circle (background)
 		this.joyBG = this.add.graphics();
-		this.joyBG.fillStyle(0x000000, 0.2);
+		this.joyBG.fillStyle(0x000000, 0.5); // besser sichtbar auf Mobile
 		this.joyBG.fillCircle(cx, cy, radius);
 		this.joyBG.setScrollFactor(0);
 
 		// Inner circle (stick)
 		this.joyStick = this.add.graphics();
-		this.joyStick.fillStyle(0xffffff, 0.4);
+		this.joyStick.fillStyle(0xffffff, 0.6);
 		this.joyStick.fillCircle(cx, cy, innerRadius);
 		this.joyStick.setScrollFactor(0);
 
@@ -103,7 +104,10 @@ export default class UIScene extends Phaser.Scene {
 
 		// ----- Pointer Events -----
 		this.input.on("pointerdown", (p) => {
-			const dist = Phaser.Math.Distance.Between(p.x, p.y, cx, cy);
+			const pX = p.x / this.scale.displayScale.x;
+			const pY = p.y / this.scale.displayScale.y;
+
+			const dist = Phaser.Math.Distance.Between(pX, pY, cx, cy);
 			if (dist < radius + 40) {
 				this.joystickActive = true;
 			}
@@ -118,8 +122,11 @@ export default class UIScene extends Phaser.Scene {
 		this.input.on("pointermove", (p) => {
 			if (!this.joystickActive) return;
 
-			const dx = p.x - cx;
-			const dy = p.y - cy;
+			const pX = p.x / this.scale.displayScale.x;
+			const pY = p.y / this.scale.displayScale.y;
+
+			const dx = pX - cx;
+			const dy = pY - cy;
 			const dist = Math.sqrt(dx * dx + dy * dy);
 			const max = 60;
 
@@ -140,7 +147,7 @@ export default class UIScene extends Phaser.Scene {
 
 	updateStickGraphics(x, y) {
 		this.joyStick.clear();
-		this.joyStick.fillStyle(0xffffff, 0.4);
+		this.joyStick.fillStyle(0xffffff, 0.6);
 		this.joyStick.fillCircle(x, y, 40);
 	}
 
