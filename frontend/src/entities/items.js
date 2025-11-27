@@ -17,7 +17,11 @@ export default class Item extends Phaser.Physics.Arcade.Sprite {
 		this.item_id = info.item_id;
 		this.item_key = info.key;
 		this.name = info.name ?? itemData?.name ?? "Unknown";
+		this.description = itemData?.description ?? "";
 		this.quantity = info.quantity ?? 1;
+		this.itemFrame = itemData?.frame ?? 0;
+		this.price = itemData?.price ?? 0;
+		this.setFrame(this.itemFrame);
 
 		scene.add.existing(this);
 		scene.physics.add.existing(this, true); // static body

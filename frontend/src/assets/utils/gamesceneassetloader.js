@@ -25,20 +25,28 @@ export function preloadAssets(scene) {
 	const treeUrl = new URL("../resources/tree.png", import.meta.url).href;
 	scene.load.image("tree", treeUrl);
 
-	// Resources
 	const RockUrl = new URL("../resources/rock.png", import.meta.url).href;
 	scene.load.image("rock", RockUrl);
 
-	const mushroomURL = new URL("../items/mushroom.png", import.meta.url).href;
-	scene.load.image("mushroom", mushroomURL, {
-		frameWidth: 32,
-		frameHeight: 32,
-	});
-
 	//UI
-	// Resources
+
+	const cancel_downUrl = new URL("../ui/cancel.png", import.meta.url).href;
+	scene.load.image("cancel", cancel_downUrl);
+
 	const arrow_downUrl = new URL("../ui/arrow_down.png", import.meta.url).href;
 	scene.load.image("arrow_down", arrow_downUrl);
+
+	const hpURL = new URL("../ui/hp.png", import.meta.url).href;
+	scene.load.image("hp", hpURL);
+
+	const xpURL = new URL("../ui/xp.png", import.meta.url).href;
+	scene.load.image("xp", xpURL);
+
+	const moneyURL = new URL("../ui/money.png", import.meta.url).href;
+	scene.load.image("money", moneyURL);
+
+	const lvlURL = new URL("../ui/lvl.png", import.meta.url).href;
+	scene.load.image("lvl", lvlURL);
 
 	// Sounds
 

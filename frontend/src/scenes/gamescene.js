@@ -18,22 +18,19 @@ export default class GameScene extends Phaser.Scene {
 	init(data) {
 		this.player_id = data?.player_id ?? null;
 		this.account_id = data?.account_id ?? null;
-		this.scene.launch("UIScene");
 	}
 
 	preload() {
-		// Stelle sicher, dass im Asset-Loader der 'mushroom'-Sprite vorhanden ist:
 		preloadAssets(this);
 	}
 
 	create() {
+		this.scene.launch("UIScene");
 		this.socket = socket;
 		this.players = {};
 		this.playerGroup = this.physics.add.group();
 		this.itemsGroup = this.physics.add.staticGroup(); // Welt-Items
 		this.itemsById = {}; // world_item_id -> Item Sprite
-		this.inventory = new Inventory(this);
-		this.inventory.initUI(this.scene.get("UIScene"));
 		this.resourcesDefinitions = {}; // resource_id -> { id, key, name }
 		this.resources = {};
 		this.resourcesGroup = this.physics.add.staticGroup();
@@ -144,7 +141,7 @@ export default class GameScene extends Phaser.Scene {
 
 		// Inventar-Updates nur für lokalen Spieler
 		this.socket.on("inventory:update", (payload) => {
-			this.inventory.setFromServer(payload);
+			if (this.inventory) this.inventory.setFromServer(payload);
 		});
 
 		// Fehlerfeedback (optional)
@@ -166,6 +163,8 @@ export default class GameScene extends Phaser.Scene {
 
 	addPlayer(playerInfo, isLocal) {
 		const player = new Player(this, playerInfo, isLocal);
+		this.inventory = new Inventory(this, 20, player);
+		this.inventory.initUI(this.scene.get("UIScene"));
 		this.players[player.socket_id] = player;
 		this.playerGroup.add(player);
 
@@ -312,6 +311,21 @@ export default class GameScene extends Phaser.Scene {
 			sprite.setDepth(10 + index);
 			if (sprite.nameText) {
 				sprite.nameText.setDepth(1000 + index);
+			}
+		});
+	}
+
+	sendPlayerData() {
+		this.events.on("requestPlayerData", (callback) => {
+			if (this.player) {
+				callback({
+					money: this.player.money,
+					exp: this.player.exp,
+					level: this.player.level,
+					currenthealth: this.player.currenthealth,
+				});
+			} else {
+				callback(null);
 			}
 		});
 	}

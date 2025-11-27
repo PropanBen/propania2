@@ -11,6 +11,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 		this.money = playerInfo.money;
 		this.exp = playerInfo.exp;
 		this.level = playerInfo.level;
+		this.currenthealth = playerInfo.currenthealth;
 		this.isLocalPlayer = isLocalPlayer;
 		this.x = playerInfo.x;
 		this.y = playerInfo.y;
@@ -100,6 +101,19 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 				}
 			});
 		}
+
+		//socket.emit("player:loadData", this.player_id);
+
+		socket.on("player:getData", (playerData) => {
+			this.money = playerData.money;
+			this.exp = playerData.exp;
+			this.level = playerData.level;
+			this.currenthealth = playerData.currenthealth;
+			this.x = playerData.x;
+			this.y = playerData.y;
+
+			console.log(playerData);
+		});
 	}
 
 	setPosition(x, y) {
@@ -291,5 +305,58 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 		if (Phaser.Input.Keyboard.JustDown(this.keyMinus)) {
 			this.camera.zoom = Phaser.Math.Clamp(this.camera.zoom - 0.1, 0.5, 3);
 		}
+	}
+
+	set currenthealth(value) {
+		this._currenthealth = value;
+		this.updatePlayer();
+		this.scene.events.emit("playerHealthChanged", this._currenthealth);
+	}
+
+	get currenthealth() {
+		return this._currenthealth;
+	}
+
+	set money(value) {
+		this._money = value;
+		this.updatePlayer();
+		this.scene.events.emit("playerMoneyChanged", this._money);
+	}
+
+	get money() {
+		return this._money;
+	}
+
+	set exp(value) {
+		this._exp = value;
+		this.updatePlayer();
+		this.scene.events.emit("playerExpChanged", this._exp);
+	}
+
+	get exp() {
+		return this._exp;
+	}
+
+	set level(value) {
+		this._level = value;
+		this.updatePlayer();
+		this.scene.events.emit("playerLevelChanged", this._level);
+	}
+	get level() {
+		return this._level;
+	}
+
+	updatePlayer() {
+		const playerData = {
+			money: this.money,
+			exp: this.exp,
+			level: this.level,
+			currenthealth: this.currenthealth,
+			x: this.x,
+			y: this.y,
+			id: this.player_id,
+		};
+
+		socket.emit("player:update", playerData);
 	}
 }

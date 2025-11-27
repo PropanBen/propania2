@@ -51,7 +51,9 @@ export async function withTransaction(fn) {
 // --------- Spieler-Loading/Persistenz ----------
 export async function loadPlayerFromDB(playerId) {
 	try {
-		const rows = await query("SELECT id, name, money, exp, level, positionX, positionY FROM players WHERE id = ?", [playerId]);
+		const rows = await query("SELECT id, name, money, exp, level, currenthealth, positionX, positionY FROM players WHERE id = ?", [
+			playerId,
+		]);
 
 		if (rows.length > 0) {
 			const row = rows[0];
@@ -61,6 +63,7 @@ export async function loadPlayerFromDB(playerId) {
 				money: Number(row.money),
 				exp: Number(row.exp),
 				level: Number(row.level),
+				currenthealth: Number(row.currenthealth),
 				positionX: Number(row.positionX),
 				positionY: Number(row.positionY),
 			};
@@ -76,11 +79,11 @@ export async function updatePlayer(playerData) {
 	if (!playerData || Object.keys(playerData).length === 0) return;
 	if (playerData.id === undefined) return;
 
-	const { money, exp, level, x, y, id } = playerData;
+	const { money, exp, level, currenthealth, x, y, id } = playerData;
 
 	await query(
-		"UPDATE players SET money = COALESCE(?, money), exp = COALESCE(?, exp), level = COALESCE(?, level), positionX = COALESCE(?, positionX), positionY = COALESCE(?, positionY) WHERE id = ?",
-		[money, exp, level, x, y, id]
+		"UPDATE players SET money = COALESCE(?, money), exp = COALESCE(?, exp), level = COALESCE(?, level), currenthealth = COALESCE(?, currenthealth), positionX = COALESCE(?, positionX), positionY = COALESCE(?, positionY) WHERE id = ?",
+		[money, exp, level, currenthealth, x, y, id]
 	);
 }
 

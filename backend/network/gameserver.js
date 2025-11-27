@@ -109,6 +109,16 @@ export function initGameServer(io) {
 			io.emit("updatePlayers", { socket_id: data.socket_id, x: data.x, y: data.y, anim: data.anim });
 		});
 
+		socket.on("player:loadData", async (player_id) => {
+			const playerFromDB = await loadPlayerFromDB(player_id);
+			socket.emit("player:getData", playerFromDB);
+		});
+
+		socket.on("player:update", (playerData) => {
+			updatePlayer(playerData);
+			socket.emit("player:loadData", playerData.player_id);
+		});
+
 		/**
 		 * Item-Pickup: Welt -> Inventar
 		 */
