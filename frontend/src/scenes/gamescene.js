@@ -165,6 +165,9 @@ export default class GameScene extends Phaser.Scene {
 		const player = new Player(this, playerInfo, isLocal);
 		this.inventory = new Inventory(this, 20, player);
 		this.inventory.initUI(this.scene.get("UIScene"));
+
+		this.events.emit("inventoryReady", this.inventory);
+
 		this.players[player.socket_id] = player;
 		this.playerGroup.add(player);
 

@@ -5,6 +5,9 @@ export default class UIScene extends Phaser.Scene {
 	constructor() {
 		super("UIScene");
 		this.sceneKey = "UIScene";
+
+		this.joystickActive = false;
+		this.joystickVector = { x: 0, y: 0 };
 	}
 
 	create() {
@@ -16,11 +19,44 @@ export default class UIScene extends Phaser.Scene {
 		const xpbtn = this.add.sprite(30, 80, "xp").setScale(3);
 		const moneybtn = this.add.sprite(30, 130, "money").setScale(3);
 		const lvlbtn = this.add.sprite(30, 180, "lvl").setScale(3);
+		const ebtn = this.add.sprite(270, window.innerHeight - 100, "e").setScale(3);
+		const qbtn = this.add.sprite(270, window.innerHeight - 200, "q").setScale(3);
+		const plusbtn = this.add.sprite(180, window.innerHeight - 270, "plus").setScale(3);
+		const minusbtn = this.add.sprite(120, window.innerHeight - 270, "minus").setScale(3);
+		const cambtn = this.add.sprite(60, window.innerHeight - 270, "cam").setScale(3);
+		const inventorybtn = this.add.sprite(270, window.innerHeight - 270, "inventory").setScale(3);
 
 		this.healthText = this.add.text(60, 20, "", Functions.defaultTextStyle);
 		this.xpText = this.add.text(60, 70, "0", Functions.defaultTextStyle);
 		this.moneyText = this.add.text(60, 120, "0", Functions.defaultTextStyle);
 		this.lvlText = this.add.text(60, 170, "1", Functions.defaultTextStyle);
+
+		// Jetzt wieder problemlos möglich:
+		ebtn.setInteractive({ useHandCursor: true });
+		qbtn.setInteractive({ useHandCursor: true });
+		plusbtn.setInteractive({ useHandCursor: true });
+		minusbtn.setInteractive({ useHandCursor: true });
+		cambtn.setInteractive({ useHandCursor: true });
+		inventorybtn.setInteractive({ useHandCursor: true });
+
+		this.scene.get("GameScene").events.on("inventoryReady", (inventory) => {
+			inventorybtn.on("pointerdown", () => inventory.toggleUI());
+		});
+
+		plusbtn.on("pointerdown", () => this.zoomCamera(0.1));
+		minusbtn.on("pointerdown", () => this.zoomCamera(-0.1));
+
+		cambtn.on("pointerdown", () => {
+			this.toggleFreeCamera();
+		});
+
+		ebtn.on("pointerdown", () => {
+			gameScene.tryPickup();
+		});
+
+		qbtn.on("pointerdown", () => {
+			gameScene.tryDrop(gameScene.inventory.items[0]);
+		});
 
 		gameScene.events.on("playerHealthChanged", (newHealth) => {
 			this.healthText.setText(`${newHealth}/100`);
@@ -37,5 +73,98 @@ export default class UIScene extends Phaser.Scene {
 		gameScene.events.on("playerLevelChanged", (newLvL) => {
 			this.lvlText.setText(`${newLvL}`);
 		});
+
+		this.createJoystick();
+	}
+
+	createJoystick() {
+		const radius = 80;
+		const innerRadius = 40;
+		const cx = 150;
+		const cy = this.cameras.main.height - 150;
+
+		// --------------------------
+		//  REPLACED CIRCLES WITH GRAPHICS
+		// --------------------------
+
+		// Outer circle (background)
+		this.joyBG = this.add.graphics();
+		this.joyBG.fillStyle(0x000000, 0.2);
+		this.joyBG.fillCircle(cx, cy, radius);
+		this.joyBG.setScrollFactor(0);
+
+		// Inner circle (stick)
+		this.joyStick = this.add.graphics();
+		this.joyStick.fillStyle(0xffffff, 0.4);
+		this.joyStick.fillCircle(cx, cy, innerRadius);
+		this.joyStick.setScrollFactor(0);
+
+		this.joyCenter = { x: cx, y: cy };
+
+		// ----- Pointer Events -----
+		this.input.on("pointerdown", (p) => {
+			const dist = Phaser.Math.Distance.Between(p.x, p.y, cx, cy);
+			if (dist < radius + 40) {
+				this.joystickActive = true;
+			}
+		});
+
+		this.input.on("pointerup", () => {
+			this.joystickActive = false;
+			this.updateStickGraphics(cx, cy);
+			this.joystickVector = { x: 0, y: 0 };
+		});
+
+		this.input.on("pointermove", (p) => {
+			if (!this.joystickActive) return;
+
+			const dx = p.x - cx;
+			const dy = p.y - cy;
+			const dist = Math.sqrt(dx * dx + dy * dy);
+			const max = 60;
+
+			const clamped = Math.min(max, dist);
+			const angle = Math.atan2(dy, dx);
+
+			const stickX = cx + Math.cos(angle) * clamped;
+			const stickY = cy + Math.sin(angle) * clamped;
+
+			this.updateStickGraphics(stickX, stickY);
+
+			this.joystickVector = {
+				x: Math.cos(angle) * (clamped / max),
+				y: Math.sin(angle) * (clamped / max),
+			};
+		});
+	}
+
+	updateStickGraphics(x, y) {
+		this.joyStick.clear();
+		this.joyStick.fillStyle(0xffffff, 0.4);
+		this.joyStick.fillCircle(x, y, 40);
+	}
+
+	getJoystickVector() {
+		return this.joystickVector;
+	}
+
+	zoomCamera(amount) {
+		const gameScene = this.scene.get("GameScene");
+		if (!gameScene || !gameScene.player) return;
+
+		const camera = gameScene.cameras.main;
+		camera.zoom = Phaser.Math.Clamp(camera.zoom + amount, 0.5, 3);
+	}
+
+	toggleFreeCamera() {
+		const gameScene = this.scene.get("GameScene");
+		if (!gameScene || !gameScene.player) return;
+
+		const player = gameScene.player;
+		const camera = gameScene.cameras.main;
+
+		player.freeCameraMode = !player.freeCameraMode;
+		if (player.freeCameraMode) camera.stopFollow();
+		else camera.startFollow(player);
 	}
 }

@@ -75,7 +75,7 @@ export default class Inventory {
 			}
 		});
 
-		//	this.refreshUI();
+		this.refreshUI();
 	}
 
 	setFromServer(payload) {
@@ -91,7 +91,7 @@ export default class Inventory {
 			};
 		});
 
-		//this.refreshUI();
+		this.refreshUI();
 	}
 
 	toggleUI() {

@@ -48,6 +48,24 @@ export function preloadAssets(scene) {
 	const lvlURL = new URL("../ui/lvl.png", import.meta.url).href;
 	scene.load.image("lvl", lvlURL);
 
+	const eURL = new URL("../ui/e.png", import.meta.url).href;
+	scene.load.image("e", eURL);
+
+	const qURL = new URL("../ui/q.png", import.meta.url).href;
+	scene.load.image("q", qURL);
+
+	const plusURL = new URL("../ui/plus.png", import.meta.url).href;
+	scene.load.image("plus", plusURL);
+
+	const minusURL = new URL("../ui/minus.png", import.meta.url).href;
+	scene.load.image("minus", minusURL);
+
+	const camURL = new URL("../ui/cam.png", import.meta.url).href;
+	scene.load.image("cam", camURL);
+
+	const inventoryURL = new URL("../ui/inventory.png", import.meta.url).href;
+	scene.load.image("inventory", inventoryURL);
+
 	// Sounds
 
 	const popsoundURL = new URL("../sounds/pop.mp3", import.meta.url).href;
