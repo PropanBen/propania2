@@ -8,7 +8,7 @@ const API_URL =
 
 export const socket = io(API_URL, {
 	withCredentials: true,
-	transports: ["websocket"],
+	transports: ["polling", "websocket"],
 });
 
 // Debug-Logging

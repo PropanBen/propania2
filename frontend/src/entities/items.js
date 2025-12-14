@@ -24,7 +24,8 @@ export default class Item extends Phaser.Physics.Arcade.Sprite {
 		this.setFrame(this.itemFrame);
 
 		scene.add.existing(this);
-		scene.physics.add.existing(this, true); // static body
+		scene.physics.add.existing(this, true);
+		this.body.setSize(32, 32);
 		this.setDepth(11);
 		this.setScale(2);
 
@@ -37,6 +38,9 @@ export default class Item extends Phaser.Physics.Arcade.Sprite {
 			.setOrigin(0.5);
 		this.nameText.setDepth(1000);
 		*/
+
+		this.quantityText = scene.add.text(this.x + 12, this.y + 15, this.quantity + "x", { fontSize: "12px", color: "#fff" }).setOrigin(0.5);
+		this.quantityText.setDepth(1000);
 	}
 
 	normalizeSize(targetWidth, targetHeight) {
@@ -55,9 +59,9 @@ export default class Item extends Phaser.Physics.Arcade.Sprite {
 	}
 
 	destroy(fromScene) {
-		if (this.nameText) {
-			this.nameText.destroy();
-			this.nameText = null;
+		if (this.quantityText) {
+			this.quantityText.destroy();
+			this.quantityText = null;
 		}
 		super.destroy(fromScene);
 	}

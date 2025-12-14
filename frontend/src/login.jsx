@@ -8,11 +8,21 @@ export default function Login({ onLogin }) {
 	const [password, setPassword] = useState("");
 	const [loading, setLoading] = useState(false);
 
-	// Dynamisch je nach env
+	// prod
+
+	/*
 	const API_URL =
 		import.meta.env.VITE_APP_ENV === "production"
 			? `https://${import.meta.env.VITE_API_URL}` // nur hier einmal https hinzufügen
 			: `${import.meta.env.VITE_HOST_SERVER}:${import.meta.env.VITE_API_PORT}`;
+			*/
+
+	// local
+	// Dynamisch je nach env
+	const API_URL =
+		import.meta.env.VITE_APP_ENV === "production"
+			? import.meta.env.VITE_API_URL
+			: `${import.meta.env.VITE_API_PROTOKOLL}://${import.meta.env.VITE_HOST_SERVER}:${import.meta.env.VITE_API_PORT}`;
 
 	const handleLogin = async (e) => {
 		e.preventDefault();
@@ -117,6 +127,7 @@ export default function Login({ onLogin }) {
 						padding: "0.75rem",
 						borderRadius: "8px",
 						border: "1px solid #ccc",
+						fontFamily: "Arial",
 					}}
 				/>
 				<input
@@ -128,6 +139,7 @@ export default function Login({ onLogin }) {
 						padding: "0.75rem",
 						borderRadius: "8px",
 						border: "1px solid #ccc",
+						fontFamily: "Arial",
 					}}
 				/>
 				<button

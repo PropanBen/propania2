@@ -1,23 +1,26 @@
 // src/scenes/gamescene.js
-import Player from "../entities/player.js";
-import { socket } from "../socket.js";
 import Phaser from "phaser";
-import { preloadAssets } from "../assets/utils/gamesceneassetloader.js";
-import { registerPlayerAnimations } from "../assets/utils/animations.js";
+import { socket } from "../socket.js";
 
+import Player from "../entities/player.js";
 import Item from "../entities/items.js";
 import Inventory from "../entities/inventory";
 import Resource from "../entities/resources.js";
 
+import { preloadAssets } from "../assets/utils/gamesceneassetloader.js";
+import { registerPlayerAnimations } from "../assets/utils/animations.js";
+
 export default class GameScene extends Phaser.Scene {
-	constructor(data) {
+	constructor() {
 		super("GameScene");
-		this.player = null;
+		this.players = {};
+		this.resources = {};
+		this.worldItems = {};
 	}
 
 	init(data) {
-		this.player_id = data?.player_id ?? null;
-		this.account_id = data?.account_id ?? null;
+		this.playerData = data.player;
+		this.playerData.socket_id = socket.id;
 	}
 
 	preload() {
@@ -26,37 +29,31 @@ export default class GameScene extends Phaser.Scene {
 
 	create() {
 		this.scene.launch("UIScene");
-		this.socket = socket;
-		this.players = {};
+		// Groups
 		this.playerGroup = this.physics.add.group();
-		this.itemsGroup = this.physics.add.staticGroup(); // Welt-Items
-		this.itemsById = {}; // world_item_id -> Item Sprite
-		this.resourcesDefinitions = {}; // resource_id -> { id, key, name }
-		this.resources = {};
+		this.itemsGroup = this.physics.add.staticGroup();
 		this.resourcesGroup = this.physics.add.staticGroup();
-		this.buildingsGroup = this.physics.add.staticGroup();
+		this.interactablesGroup = this.physics.add.staticGroup();
 
-		registerPlayerAnimations(this);
+		// Tilemap und Layer
 
-		// Map
 		const map = this.make.tilemap({ key: "map" });
 		const groundTiles = map.addTilesetImage("Ground", "ground");
 		const groundLayer = map.createLayer("Ground", groundTiles, 0, 0);
-		groundLayer.setDepth(10);
+		groundLayer.setDepth(0);
 		groundLayer.setScale(4);
+		this.groundLayer = groundLayer;
 
-		// Kollisionen
-		this.physics.add.collider(this.playerGroup, this.playerGroup);
-		this.physics.add.collider(this.playerGroup, this.resourcesGroup);
-		this.physics.add.collider(this.playerGroup, this.buildingsGroup);
+		// Input keys
+		this.keyE = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
+		this.keyQ = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
+		this.keyI = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.I);
 
-		// HUD: Aufheben-Hinweis
 		this.interactText = this.add
 			.text(0, 0, "[E] Pick up", {
 				fontSize: "14px",
 				fontStyle: "bold",
 				color: "#ffffffff",
-				//backgroundColor: 'rgba(0,0,0,0.35)',
 				padding: { x: 6, y: 2 },
 			})
 			.setOrigin(0.5)
@@ -64,271 +61,204 @@ export default class GameScene extends Phaser.Scene {
 			.setVisible(false)
 			.setScrollFactor(1);
 
-		// Eingaben
-		this.keyE = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
-		this.keyQ = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
-		this.keyI = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.I);
+		registerPlayerAnimations(this);
 
+		// ------------------------------
 		// Socket Events
-		this.socket.on("currentPlayers", (players) => {
-			Object.values(players).forEach((player) => {
-				this.addPlayer(player, player.socket_id === this.socket.id);
-			});
+		// ------------------------------
+
+		// Player Events
+		socket.on("currentPlayers", (players) => {
+			Object.values(players).forEach((p) => this.addPlayer(p, p.socket_id === socket.id));
 		});
 
-		this.socket.on("newPlayer", (playerInfo) => {
+		socket.on("newPlayer", (playerInfo) => {
 			this.addPlayer(playerInfo, false);
 		});
 
-		this.socket.on("updatePlayers", (player) => {
-			const existing = this.players[player.socket_id];
-			if (existing && !existing.isLocalPlayer) {
-				existing.setPosition(player.x, player.y);
+		socket.on("updatePlayers", (playerData) => {
+			const existing = this.players[playerData.socket_id];
+			if (existing && !existing.isLocal()) {
+				// Position setzen
+				existing.setPosition(playerData.x, playerData.y);
 
-				if (existing.currentAnim !== player.anim) {
-					existing.play(player.anim, true);
-					existing.currentAnim = player.anim;
+				// Animation abspielen
+				if (existing.animation) {
+					existing.animation.playAnimation(playerData.anim);
+				}
+
+				// NameText mitziehen
+				if (existing.nameText) {
+					existing.nameText.setPosition(playerData.x, playerData.y - 40);
 				}
 			}
 		});
 
-		this.socket.on("playerDisconnected", (socket_id) => {
+		socket.on("playerDisconnected", (socket_id) => {
 			if (this.players[socket_id]) {
-				this.players[socket_id].nameText.destroy();
 				this.players[socket_id].destroy();
 				delete this.players[socket_id];
 			}
 		});
 
-		// Welt-Items initial + Live-Änderungen
-		this.socket.on("world:items:init", (items) => {
-			this.itemsGroup.clear(true, true);
-			items.forEach((info) => this.spawnItem(info));
-		});
-
-		// === world:resources:init ===
-		this.socket.on("world:resources:init", (resources) => {
-			this.resourcesDefinitions = resources["resourcesDefinitions"];
-			this.resources = resources["worldResources"];
-
-			Object.values(this.resources).forEach((resource) => {
-				const def = this.resourcesDefinitions.find((x) => x.id === resource.resource_id);
-				if (def) {
-					resource.key = def.key ?? "Unknown";
-					resource.name = def.name ?? "Unknown";
-
-					const r = new Resource(this, resource);
-					this.resourcesGroup.add(r);
-				}
+		socket.on("world:items:update", (itemData) => {
+			this.worldItems = {};
+			this.itemsGroup.clear();
+			this.clearByClass(Item);
+			itemData.forEach((item) => {
+				// info: { id, item_id, key, name, x, y, quantity }
+				const obj = { id: item.id, item_id: item.item_id, key: item.key, x: item.x, y: item.y, quantity: item.quantity };
+				this.AddItem(obj);
 			});
 		});
 
-		this.socket.on("item:spawned", (info) => {
-			this.spawnItem(info);
+		socket.on("world:item:add", (item) => {
+			const newitem = this.AddItem(item);
 		});
 
-		this.socket.on("item:removed", (world_item_id) => {
-			const sprite = this.itemsById[world_item_id];
-			if (sprite) {
-				sprite.destroy();
-				delete this.itemsById[world_item_id];
+		socket.on("world:item:removed", (world_item_id) => {
+			const item = this.worldItems[world_item_id];
+			item.destroy();
+		});
+
+		// ------------------------------
+		// Inventory Events
+		// ------------------------------
+
+		socket.on("inventory:update:items", (items) => {
+			// Gets Data after  socket.emit("inventory:load");
+			if (this.localPlayer) this.localPlayer.inventory.loadFromServer(items);
+			if (this.scene.get("UIScene").inventoryUI) this.scene.get("UIScene").inventoryUI.refresh();
+		});
+
+		socket.on("inventory:item:remove", () => {
+			socket.emit("inventory:load");
+		});
+
+		this.events.on("inventory:ready", () => {
+			socket.emit("inventory:load");
+		});
+
+		socket.on("world_resources_update", (resources) => {
+			this.clearByClass(Resource);
+			this.resourcesGroup.clear();
+			// Ressourcen hinzufügen
+			this.addResources(resources);
+		});
+
+		socket.on("world_resource:removed", (world_resource_id) => {
+			const res = this.resources[world_resource_id];
+			if (res) {
+				this.resourcesGroup.remove(res, true, true);
+				this.interactablesGroup.remove(res, true, true);
+				res.destroy();
+				delete this.resources[world_resource_id];
 			}
-			if (this.nearItemId === world_item_id) {
-				this.nearItemId = null;
-				this.interactText.setVisible(false);
-			}
 		});
 
-		// Inventar-Updates nur für lokalen Spieler
-		this.socket.on("inventory:update", (payload) => {
-			if (this.inventory) this.inventory.setFromServer(payload);
-		});
+		// ------------------------------
+		// End Socket Events
+		// ------------------------------
 
-		// Fehlerfeedback (optional)
-		this.socket.on("item:error", (err) => {
-			console.warn("Item Error:", err?.message ?? err);
-		});
+		// Load local player
+		socket.emit("playerJoin", this.playerData);
+		//Load world items
+		socket.emit("world:items:load");
+		// Laod Resources
+		socket.emit("world:resources:load");
+	}
 
-		// Nach Verbindung -> Init anfordern
-		this.socket.emit("world:init:request", { player_id: this.player_id });
+	update() {
+		if (this.localPlayer) this.localPlayer.update();
 
-		this.socket.on("world:resources:update", (world_resource_id) => {
-			const toRemove = this.resourcesGroup.getChildren().find((r) => r.world_resource_id === world_resource_id);
-			if (toRemove) {
-				toRemove.destroy();
-			}
-			this.resources = this.resources.filter((r) => r.id !== world_resource_id);
-		});
+		if (Phaser.Input.Keyboard.JustDown(this.keyE)) {
+			this.localPlayer.interaction.performAction("interact");
+		}
+		if (Phaser.Input.Keyboard.JustDown(this.keyQ)) {
+			this.localPlayer.interaction.performAction("drop");
+		}
+		if (Phaser.Input.Keyboard.JustDown(this.keyI) && this.localPlayer) {
+			this.events.emit("toggleInventory", this.localPlayer.inventory);
+		}
+
+		this.updateDepthSorting();
 	}
 
 	addPlayer(playerInfo, isLocal) {
-		const player = new Player(this, playerInfo, isLocal);
-		this.inventory = new Inventory(this, 20, player);
-		this.inventory.initUI(this.scene.get("UIScene"));
-
-		this.events.emit("inventoryReady", this.inventory);
-
-		this.players[player.socket_id] = player;
+		const player = new Player(this, playerInfo);
+		//this.players[socket.id] = player;
+		this.players[playerInfo.socket_id] = player;
 		this.playerGroup.add(player);
 
-		if (isLocal) {
-			this.player = player;
+		this.physics.add.collider(player, this.playerGroup);
+		//	this.physics.add.collider(player, this.itemsGroup);
+		this.physics.add.collider(player, this.resourcesGroup);
 
-			this.physics.add.overlap(
-				player.actionzone,
-				this.resourcesGroup,
-				(zone, resource) => {
-					if (player.actionzoneTarget == resource) return;
-					player.actionzoneTarget = resource;
-				},
-				null,
-				this
-			);
-
-			this.physics.add.overlap(
-				this.player.actionzone,
-				this.itemsGroup,
-				(actionzone, itemSprite) => {
-					this.nearItemId = itemSprite.world_item_id;
-					this.interactText
-						.setText("[E] Aufheben")
-						.setPosition(itemSprite.x, itemSprite.y - 30)
-						.setVisible(true);
-				},
-				null,
-				this
-			);
-		}
+		if (isLocal) this.localPlayer = player;
+		if (this.localPlayer) this.events.emit("localPlayerReady", player);
+		if (this.localPlayer) socket.emit("inventory:load");
 	}
-	spawnItem(info) {
+
+	AddItem(info) {
 		// info: { id, item_id, key, name, x, y, quantity }
 		const item = new Item(this, info);
+		this.worldItems[info.id] = item;
+		item.world_item_id = info.id;
 		this.itemsGroup.add(item);
-		this.itemsById[item.world_item_id] = item;
+		this.interactablesGroup.add(item);
 
 		return item;
 	}
 
-	tryPickup() {
-		if (!this.nearItemId) return;
-
-		this.socket.emit("item:pickup:request", {
-			world_item_id: this.nearItemId,
-			player_id: this.player_id,
-			actionzone: this.player.actionzone,
-		});
-		this.interactText.setVisible(false);
-		this.nearItemId = null;
-
-		// 👇 Lokalen Spieler Aufheben-Animation abspielen lassen
-		const you = this.players[this.socket.id];
-		if (you && you.isLocalPlayer) {
-			you.playActionAnimation("pickup", 600);
-		}
-
-		const config = { delay: 0.4 };
-		this.sound.play("pop", config);
-	}
-
-	tryDrop(item) {
-		const you = this.players[this.socket.id];
-		if (!you) return;
-		if (!item) return;
-		const dropPosition = you.setDropPostion(you.lastDirection);
-		this.socket.emit("item:drop:request", {
-			item_id: item.item_id,
-			quantity: 1,
-			dropPosition,
-			player_id: this.player_id,
-		});
-		// 👇 Lokalen Spieler Fallenlassen-Animation abspielen lassen
-		if (you && you.isLocalPlayer) {
-			you.playActionAnimation("drop", 600);
-			const config = { delay: 0.7 };
-			this.sound.play("drop", config);
-		}
-	}
-
-	chooseAction() {
-		if (this.nearItemId) return this.tryPickup();
-		if (this.player.actionzoneTarget != null) return this.player.playActionAnimation(this.player.actionzoneTarget.key, 1000);
-	}
-
-	update() {
-		if (!this.player) return;
-
-		if (this.player.actionzoneTarget) {
-			const touching = this.physics.overlap(this.player.actionzone, this.player.actionzoneTarget);
-			if (!touching) {
-				this.player.actionzoneTarget = null;
+	addResources(resources) {
+		resources.forEach((res) => {
+			if (!this.resources[res.id]) {
+				const resourceObj = new Resource(this, res);
+				this.resources[res.id] = resourceObj;
+				this.resourcesGroup.add(resourceObj);
+				this.interactablesGroup.add(resourceObj);
 			}
-		}
+		});
+	}
 
-		// Spieler-Update
-		if (this.players[this.socket.id]) {
-			this.players[this.socket.id].update();
-		}
-
-		// Eingaben
-		if (Phaser.Input.Keyboard.JustDown(this.keyE)) this.chooseAction();
-		if (Phaser.Input.Keyboard.JustDown(this.keyQ)) this.tryDrop(this.inventory.items[0]);
-		if (Phaser.Input.Keyboard.JustDown(this.keyI)) this.inventory.toggleUI();
-
-		// Interact-Hinweis verstecken, wenn man sich entfernt
-		if (this.nearItemId) {
-			const you = this.player.actionzone;
-			const item = this.itemsById[this.nearItemId];
-			if (!you || !item) {
-				this.interactText.setVisible(false);
-				this.nearItemId = null;
-			} else {
-				const dx = you.x - item.x;
-				const dy = you.y - item.y;
-				const dist2 = dx * dx + dy * dy;
-				if (dist2 > 64 * 64) {
-					this.interactText.setVisible(false);
-					this.nearItemId = null;
-				}
+	clearByClass(classType) {
+		this.interactablesGroup.getChildren().forEach((child) => {
+			if (child instanceof classType) {
+				// Aus Gruppe entfernen und zerstören
+				this.interactablesGroup.remove(child, true, true);
 			}
-		}
-		// Spieler und Items nach Y sortieren
-		this.updateDepthSorting();
+		});
 	}
 
 	updateDepthSorting() {
-		const allSprites = [
+		if (this.groundLayer) {
+			this.groundLayer.setDepth(0);
+		}
+
+		// Alle beweglichen Sprites: Spieler, Items, Ressourcen
+		const movableSprites = [
 			...Object.values(this.players),
+			...this.playerGroup.getChildren(),
 			...this.itemsGroup.getChildren(),
-			...this.buildingsGroup.getChildren(),
 			...this.resourcesGroup.getChildren(),
 		];
 
-		allSprites.sort((a, b) => {
-			// Nutze body y für Spieler, sonst sprite y
-			const ay = a.body ? a.body.y + a.body.height : a.y;
-			const by = b.body ? b.body.y + b.body.height : b.y;
+		// Sortiere nach "Bodenhöhe" (y + body.height)
+		movableSprites.sort((a, b) => {
+			const ay = a.body ? a.body.y + a.body.height : a.y + (a.height || 0);
+			const by = b.body ? b.body.y + b.body.height : b.y + (b.height || 0);
 			return ay - by;
 		});
 
-		allSprites.forEach((sprite, index) => {
+		// Depth setzen
+		movableSprites.forEach((sprite, index) => {
 			sprite.setDepth(10 + index);
 			if (sprite.nameText) {
 				sprite.nameText.setDepth(1000 + index);
 			}
-		});
-	}
-
-	sendPlayerData() {
-		this.events.on("requestPlayerData", (callback) => {
-			if (this.player) {
-				callback({
-					money: this.player.money,
-					exp: this.player.exp,
-					level: this.player.level,
-					currenthealth: this.player.currenthealth,
-				});
-			} else {
-				callback(null);
+			// Optional: QuantityText oder Labels bei Items
+			if (sprite.quantityText) {
+				sprite.quantityText.setDepth(1000 + index);
 			}
 		});
 	}

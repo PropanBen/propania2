@@ -1,6 +1,7 @@
 // === Resource.js ===
 import Phaser from "phaser";
-import Item from "./items.js";
+import { socket } from "../socket";
+import itemsList from "./itemslist";
 
 export default class Resource extends Phaser.Physics.Arcade.Sprite {
 	constructor(scene, resource) {
@@ -10,7 +11,7 @@ export default class Resource extends Phaser.Physics.Arcade.Sprite {
 		this.scene = scene;
 		this.world_resource_id = resource.id;
 		this.resource_id = resource.resource_id;
-		this.key = resource.key;
+		this.resourceType = resource.key;
 		this.name = resource.name;
 		this.setOrigin(0.5, 1);
 		scene.add.existing(this);
@@ -26,18 +27,6 @@ export default class Resource extends Phaser.Physics.Arcade.Sprite {
 			this.body.setSize(64, 20);
 			this.body.setOffset(-16, 5);
 		}
-
-		// Label
-		/*
-		this.nameText = scene.add
-			.text(this.x, this.y - 18, this.name, {
-				fontSize: "12px",
-				color: "#fff",
-			})
-			.setOrigin(0.5);
-		this.nameText.setDepth(1000);
-
-		*/
 	}
 
 	setPosition(x, y) {
@@ -82,17 +71,17 @@ export default class Resource extends Phaser.Physics.Arcade.Sprite {
 		});
 	}
 
-	spanwnItems(amount) {
-		let itemkey = "";
-		if (this.key === "tree") {
-			itemkey = "log";
-		} else if (this.key === "rock") {
-			itemkey = "stone";
+	spawnItems(quantity) {
+		let item_id = null;
+
+		if (this.resourceType === "tree") {
+			item_id = 2;
+		} else if (this.resourceType === "rock") {
+			item_id = 3;
 		}
 
-		this.scene.socket.emit("world:item:spawn:request", {
-			amount: amount,
-			itemkey: itemkey,
+		socket.emit("world:item:spawn:request", {
+			resourceType: this.resourceType,
 			x: this.x,
 			y: this.y,
 		});
@@ -110,8 +99,8 @@ export default class Resource extends Phaser.Physics.Arcade.Sprite {
 				this.scene.sound.play("treefalldown");
 				this.body.enable = false;
 				this.scene.time.delayedCall(1000, () => {
-					this.scene.socket.emit("world:resources:remove", { world_resource_id: this.world_resource_id });
-					this.spanwnItems(3);
+					socket.emit("world:resources:remove", this.world_resource_id);
+					this.spawnItems();
 					const config = { delay: 0.4 };
 					this.scene.sound.play("pop", config);
 				});
@@ -139,8 +128,8 @@ export default class Resource extends Phaser.Physics.Arcade.Sprite {
 		this.scene.sound.play("rockbreaks");
 
 		this.scene.time.delayedCall(0, () => {
-			this.scene.socket.emit("world:resources:remove", { world_resource_id: this.world_resource_id });
-			this.spanwnItems(3);
+			socket.emit("world:resources:remove", this.world_resource_id);
+			this.spawnItems();
 			this.scene.sound.play("pop", { delay: 0.2 });
 		});
 	}

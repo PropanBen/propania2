@@ -2,6 +2,8 @@
 import mariadb from "mariadb";
 import dotenv from "dotenv";
 import Functions from "../utils/functions.js";
+import itemsList from "../entities/itemlist.js";
+import resourcesList from "../entities/resourcesList.js";
 dotenv.config();
 
 export const pool = mariadb.createPool({
@@ -89,47 +91,44 @@ export async function updatePlayer(playerData) {
 
 // --------- Items & Inventare ----------
 
-// Stammdaten eines Items
-export async function loadItemDefById(itemId) {
-	const rows = await query("SELECT id, `key`, name, stackable FROM items WHERE id = ?", [itemId]);
-	if (!rows[0]) return null;
-	const r = rows[0];
-	return {
-		id: Number(r.id),
-		key: r.key,
-		name: r.name,
-		stackable: Boolean(r.stackable),
-	};
-}
-
-// Alle Welt-Items laden (optional: nach Map filtern)
+// Load World Items
 export async function loadWorldItems() {
 	const rows = await query(
-		`SELECT wi.id, wi.item_id, wi.x, wi.y, wi.quantity, i.\`key\`, i.name
-     FROM world_items wi
-     JOIN items i ON i.id = wi.item_id`
+		`SELECT wi.id, wi.item_id, wi.x, wi.y, wi.quantity
+		 FROM world_items wi`
 	);
-	return rows.map((r) => ({
-		id: Number(r.id),
-		item_id: Number(r.item_id),
-		x: Number(r.x),
-		y: Number(r.y),
-		quantity: Number(r.quantity),
-		key: r.key,
-		name: r.name,
-	}));
+
+	// Lookup-Tabelle für schnelle Zuordnung
+	const itemsById = new Map(itemsList.map((item) => [Number(item.item_id), item]));
+
+	return rows.map((r) => {
+		const itemDef = itemsById.get(Number(r.item_id));
+
+		return {
+			id: Number(r.id),
+			item_id: Number(r.item_id),
+			key: itemDef?.key ?? null,
+			name: itemDef?.name ?? null,
+			x: Number(r.x),
+			y: Number(r.y),
+			quantity: Number(r.quantity),
+		};
+	});
 }
 
-export async function createWorldItem(connOrNull, item_id, x, y, quantity = 1) {
-	const run = connOrNull ?? { query };
-	const res = await (connOrNull
-		? connOrNull.query("INSERT INTO world_items (item_id, x, y, quantity) VALUES (?, ?, ?, ?)", [item_id, x, y, quantity])
-		: query("INSERT INTO world_items (item_id, x, y, quantity) VALUES (?, ?, ?, ?)", [item_id, x, y, quantity]));
+// Create World Item
+export async function WorldItemExits(world_item_id, quantity) {
+	const rows = await query("SELECT id, quantity FROM world_items WHERE id = ? AND quantity >= ?", [world_item_id, quantity]);
+	return rows.length > 0;
+}
+
+export async function createWorldItem(item_id, x, y, quantity = 1) {
+	// 1️⃣ Insert in die DB
+	const res = await query("INSERT INTO world_items (item_id, x, y, quantity) VALUES (?, ?, ?, ?)", [item_id, x, y, quantity]);
 	const id = Number(res.insertId);
 
-	const itemDef = await (connOrNull
-		? connOrNull.query("SELECT `key`, name FROM items WHERE id = ?", [item_id])
-		: query("SELECT `key`, name FROM items WHERE id = ?", [item_id]));
+	// 2️⃣ Lookup in itemsList
+	const itemDef = itemsList.find((item) => Number(item.item_id) === Number(item_id));
 
 	return {
 		id,
@@ -137,126 +136,107 @@ export async function createWorldItem(connOrNull, item_id, x, y, quantity = 1) {
 		x: Number(x),
 		y: Number(y),
 		quantity: Number(quantity),
-		key: itemDef[0]?.key ?? "unknown",
-		name: itemDef[0]?.name ?? `Item ${item_id}`,
+		key: itemDef?.key ?? "unknown",
+		name: itemDef?.name ?? `Item ${item_id}`,
 	};
 }
 
-export async function deleteWorldItem(conn, world_item_id) {
-	await conn.query("DELETE FROM world_items WHERE id = ?", [world_item_id]);
+// Remove World Item or reduce quantity
+export async function removeWorldItem(world_item_id, quantity) {
+	const world_item = await query("Select id, quantity FROM world_items WHERE id = ? FOR UPDATE", [world_item_id]);
+	if (world_item.length === 0) throw new Error("World item not found");
+	const currentQty = Number(world_item[0].quantity);
+
+	if (currentQty > quantity) {
+		const newQty = currentQty - quantity;
+		await query("UPDATE world_items SET quantity = ? WHERE id = ?", [newQty, world_item_id]);
+	} else {
+		deleteWorldItem(world_item_id);
+	}
 }
 
-// Inventar holen/erzeugen
+// Delete World Item
+export async function deleteWorldItem(world_item_id) {
+	await query("DELETE FROM world_items WHERE id = ?", [world_item_id]);
+}
+
+// Inventory system
+
 export async function getOrCreateInventory(conn, ownerType, ownerId) {
 	const rows = await conn.query("SELECT id FROM inventories WHERE owner_type = ? AND owner_id = ?", [ownerType, ownerId]);
 	if (rows.length > 0) return Number(rows[0].id);
 
-	const res = await conn.query("INSERT INTO inventories (owner_type, owner_id) VALUES (?, ?)", [ownerType, ownerId]);
+	const res = await conn.query("INSERT INTO inventories (owner_type, owner_id,capacity) VALUES (?, ?,?)", [ownerType, ownerId], 10);
 	return Number(res.insertId);
 }
 
-// Aktuellen Inventarinhalt aggregiert laden
-export async function loadInventory(ownerType, ownerId) {
+export async function loadInventory(ownerId) {
+	// 1️⃣ DB-Abfrage nur nach item_id und quantity
 	const rows = await query(
-		`SELECT ii.item_id, SUM(ii.quantity) AS quantity, i.\`key\`, i.name
-     FROM inventory_items ii
-     JOIN inventories inv ON inv.id = ii.inventory_id
-     JOIN items i ON i.id = ii.item_id
-     WHERE inv.owner_type = ? AND inv.owner_id = ?
-     GROUP BY ii.item_id, i.\`key\`, i.name
-     ORDER BY i.name ASC`,
-		[ownerType, ownerId]
+		`SELECT ii.item_id, SUM(ii.quantity) AS quantity
+         FROM inventory_items ii
+         JOIN inventories inv ON inv.id = ii.inventory_id
+         WHERE inv.owner_id = ?
+         GROUP BY ii.item_id
+         ORDER BY ii.item_id ASC`,
+		[ownerId]
 	);
-	return {
-		capacity: 20, // feste Kapazität; später evtl. aus DB
-		items: rows.map((r) => ({
+
+	// 2️⃣ Map der Item-Definitionen für schnelles Lookup
+	const itemsById = new Map(itemsList.map((item) => [Number(item.item_id), item]));
+
+	// 3️⃣ Map DB-Daten auf Definitionen
+	const items = rows.map((r) => {
+		const def = itemsById.get(Number(r.item_id));
+		return {
 			item_id: Number(r.item_id),
 			quantity: Number(r.quantity),
-			key: r.key,
-			name: r.name,
-		})),
+			key: def?.key ?? null,
+			name: def?.name ?? null,
+		};
+	});
+
+	return {
+		capacity: 20,
+		items,
 	};
 }
 
-// Menge eines Items ins Inventar addieren (stackend)
-export async function addItemToInventory(conn, inventoryId, itemId, quantity) {
-	await conn.query(
+export async function ItemExistsInInventory(inventory_id, item_id, quantity) {
+	const rows = await query("SELECT id, quantity FROM inventory_items WHERE inventory_id = ? AND item_id = ? AND quantity >= ?", [
+		inventory_id,
+		item_id,
+		quantity,
+	]);
+	return rows.length > 0;
+}
+
+export async function addItemToInventory(inventory_id, item_id, quantity) {
+	await query(
 		`INSERT INTO inventory_items (inventory_id, item_id, quantity)
-     VALUES (?, ?, ?)
-     ON DUPLICATE KEY UPDATE quantity = quantity + VALUES(quantity)`,
-		[inventoryId, itemId, quantity]
+         VALUES (?, ?, ?)
+         ON DUPLICATE KEY UPDATE quantity = quantity + VALUES(quantity)`,
+		[inventory_id, item_id, quantity]
 	);
 }
 
-// Menge aus Inventar entfernen (wirft bei Mangel)
-export async function removeItemFromInventory(conn, inventoryId, itemId, quantity) {
-	const rows = await conn.query("SELECT id, quantity FROM inventory_items WHERE inventory_id = ? AND item_id = ?", [inventoryId, itemId]);
+export async function removeItemFromInventory(inventoryId, item_id, quantity) {
+	const rows = await query("SELECT id, quantity FROM inventory_items WHERE inventory_id = ? AND item_id = ?", [inventoryId, item_id]);
+
 	if (rows.length === 0 || Number(rows[0].quantity) < quantity) {
-		throw new Error("Not enough quantity in inventory");
+		return;
 	}
+
 	const newQty = Number(rows[0].quantity) - quantity;
+
 	if (newQty === 0) {
-		await conn.query("DELETE FROM inventory_items WHERE id = ?", [Number(rows[0].id)]);
+		await query("DELETE FROM inventory_items WHERE id = ?", [Number(rows[0].id)]);
 	} else {
-		await conn.query("UPDATE inventory_items SET quantity = ? WHERE id = ?", [newQty, Number(rows[0].id)]);
+		await query("UPDATE inventory_items SET quantity = ? WHERE id = ?", [newQty, Number(rows[0].id)]);
 	}
-}
-
-// Atomarer Move: Welt-Item -> Inventar
-export async function moveWorldItemToInventory(world_item_id, ownerType, ownerId) {
-	return withTransaction(async (conn) => {
-		const wiRows = await conn.query("SELECT id, item_id, quantity FROM world_items WHERE id = ? FOR UPDATE", [world_item_id]);
-		if (wiRows.length === 0) throw new Error("World item not found");
-
-		const item_id = Number(wiRows[0].item_id);
-		const quantity = Number(wiRows[0].quantity);
-
-		const invId = await getOrCreateInventory(conn, ownerType, ownerId);
-
-		await deleteWorldItem(conn, world_item_id);
-		await addItemToInventory(conn, invId, item_id, quantity);
-
-		return { item_id, quantity };
-	});
-}
-
-// Atomarer Move: Inventar -> Welt
-export async function moveInventoryItemToWorld(ownerType, ownerId, itemId, quantity, x, y) {
-	return withTransaction(async (conn) => {
-		const invId = await getOrCreateInventory(conn, ownerType, ownerId);
-		await removeItemFromInventory(conn, invId, itemId, quantity);
-		const created = await createWorldItem(conn, itemId, x, y, quantity);
-		return created; // { id, item_id, x, y, quantity, key, name }
-	});
 }
 
 // Resources
-export async function loadResourcesDefinitions() {
-	const rows = await query("SELECT id, `key`, name,description,level FROM resources ;");
-	return rows.map((r) => ({
-		id: Number(r.id),
-		key: r.key,
-		name: r.name,
-		description: r.description,
-		level: Number(r.level),
-	}));
-}
-
-//Items
-
-export async function LoadItemIDbyKey(itemkey) {
-	const rows = await query("SELECT id FROM items WHERE `key` = ?;", [itemkey]);
-	if (rows.length > 0) {
-		return Number(rows[0].id);
-	}
-}
-
-export async function addWorldItembyKey(itemkey, amount, x, y, quantity = 1) {
-	for (let i = 0; i < amount; i++) {
-		const item_id = await LoadItemIDbyKey(itemkey);
-		await createWorldItem(null, item_id, x + Functions.randomFloatRange(-50, +50), y + Functions.randomFloatRange(-50, +50), quantity);
-	}
-}
 
 export async function RemoveWorldResourceById(world_resource_id) {
 	try {
@@ -270,10 +250,22 @@ export async function RemoveWorldResourceById(world_resource_id) {
 
 export async function loadWorldResources() {
 	const rows = await query(`SELECT id, resource_id, x, y FROM world_resources`);
-	return rows.map((r) => ({
-		id: Number(r.id),
-		resource_id: Number(r.resource_id),
-		x: Number(r.x),
-		y: Number(r.y),
-	}));
+
+	// Lookup-Tabelle für schnelle Zuordnung
+	const resourcesById = new Map(resourcesList.map((res) => [Number(res.id), res]));
+
+	return rows.map((r) => {
+		const resDef = resourcesById.get(Number(r.resource_id));
+
+		return {
+			id: Number(r.id),
+			resource_id: Number(r.resource_id),
+			key: resDef?.key ?? null,
+			name: resDef?.name ?? null,
+			description: resDef?.description ?? null,
+			level: resDef?.level ?? null,
+			x: Number(r.x),
+			y: Number(r.y),
+		};
+	});
 }

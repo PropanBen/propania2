@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import { pool } from "../database/db.js";
 import dotenv from "dotenv";
+import { getOrCreateInventory } from "../database/db.js";
 
 dotenv.config();
 
@@ -42,7 +43,19 @@ router.get("/players", async (req, res) => {
 		const accountId = payload.id;
 
 		conn = await pool.getConnection();
+
+		// Alle Spieler des Accounts holen
 		const players = await conn.query("SELECT * FROM players WHERE account_id = ?", [accountId]);
+
+		// Für jeden Spieler ein Inventar holen oder erstellen
+		for (const player of players) {
+			const inventoryId = await getOrCreateInventory(
+				conn,
+				"player",
+				player.id // ownerId → ID des Players
+			);
+			player.inventory_id = inventoryId;
+		}
 
 		res.json(players);
 	} catch (err) {

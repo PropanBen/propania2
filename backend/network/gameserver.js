@@ -1,22 +1,26 @@
 // server/game/gameserver.js
+
 import {
 	loadPlayerFromDB,
 	updatePlayer,
 	loadWorldItems,
-	moveWorldItemToInventory,
-	moveInventoryItemToWorld,
+	WorldItemExits,
+	removeWorldItem,
 	loadInventory,
-	loadResourcesDefinitions,
-	loadWorldResources,
-	addWorldItembyKey,
+	addItemToInventory,
 	removeItemFromInventory,
+	createWorldItem,
+	ItemExistsInInventory,
+	loadWorldResources,
 	RemoveWorldResourceById,
 } from "../database/db.js";
+import Functions from "../utils/functions.js";
+import resourcesDrops from "../entities/resourcedrops.js";
 
 export function initGameServer(io) {
-	const players = new Map();
+	const players = {};
 	const worldItems = new Map();
-	let worldResources = {};
+	const worldResources = new Map();
 
 	async function ensureWorldItemsLoaded() {
 		if (worldItems.size > 0) return;
@@ -28,188 +32,162 @@ export function initGameServer(io) {
 		console.error("Socket.IO connect_error:", err);
 	});
 
-	io.on("connection", (socket) => {
+	io.on("connection", async (socket) => {
 		console.log(`Player connected: ${socket.id}`);
 
-		// Platzhalter Spieler (bis DB geladen)
-		players.set(socket.id, {
-			id: socket.id, // vorläufig
-			socket_id: socket.id,
-			name: "Loading...",
-			x: 100,
-			y: 100,
-			anim: "idle_down",
+		// ------------------------------
+		// Player Events
+		// ------------------------------
+		socket.on("playerJoin", async (playerInfo) => {
+			const playerData = await loadPlayerFromDB(playerInfo.id);
+			playerData.inventory_id = playerInfo.inventory_id;
+			playerData.socket_id = socket.id;
+
+			players[socket.id] = playerData;
+
+			socket.emit("currentPlayers", players);
+			socket.broadcast.emit("newPlayer", playerData);
 		});
 
-		/**
-		 * Spieler initialisiert Welt (lädt Daten aus DB)
-		 */
-		socket.on("world:init:request", async (data) => {
-			try {
-				const player_id = data?.player_id;
-				if (!player_id) {
-					console.warn("world:init:request ohne player_id von", socket.id);
-					return;
-				}
-
-				const playerFromDB = await loadPlayerFromDB(player_id);
-
-				if (playerFromDB) {
-					const player = {
-						...playerFromDB,
-						id: player_id,
-						socket_id: socket.id,
-						x: playerFromDB.positionX ?? 100,
-						y: playerFromDB.positionY ?? 100,
-						anim: "idle_down",
-					};
-
-					players.set(socket.id, player);
-
-					// Dem neuen Spieler alle aktuellen schicken
-					socket.emit("currentPlayers", Object.fromEntries(players));
-
-					// Welt-Items einmalig laden und dem neuen Spieler senden
-					await ensureWorldItemsLoaded();
-					socket.emit("world:items:init", Array.from(worldItems.values()));
-
-					// Inventar des Spielers senden
-					const inv = await loadInventory("player", player_id);
-					socket.emit("inventory:update", inv);
-
-					const resourcesDefinitions = await loadResourcesDefinitions();
-					worldResources = await loadWorldResources();
-
-					const resources = { resourcesDefinitions, worldResources };
-					socket.emit("world:resources:init", resources);
-
-					// Allen anderen mitteilen, dass neuer Spieler da ist
-					socket.broadcast.emit("newPlayer", player);
-				} else {
-					console.log(`Kein Spieler in DB für player_id=${player_id}`);
-					socket.emit("world:init:error", {
-						message: "Player not found in DB",
-					});
-				}
-			} catch (err) {
-				console.error("Fehler beim Laden des Spielers:", err);
-				socket.emit("world:init:error", { message: "Failed to load player" });
-			}
-		});
-
-		/**
-		 * Bewegung
-		 */
 		socket.on("playerMovement", (data) => {
-			const player = players.get(socket.id);
+			const player = players[socket.id];
 			if (!player) return;
+
 			player.x = data.x;
 			player.y = data.y;
 			player.anim = data.anim;
-			io.emit("updatePlayers", { socket_id: data.socket_id, x: data.x, y: data.y, anim: data.anim });
+			player.lastDirection = data.lastDirection;
+
+			io.emit("updatePlayers", {
+				socket_id: socket.id,
+				x: data.x,
+				y: data.y,
+				anim: data.anim,
+				lastDirection: data.lastDirection,
+			});
 		});
 
-		socket.on("player:loadData", async (player_id) => {
-			const playerFromDB = await loadPlayerFromDB(player_id);
-			socket.emit("player:getData", playerFromDB);
-		});
-
-		socket.on("player:update", (playerData) => {
-			updatePlayer(playerData);
-			socket.emit("player:loadData", playerData.player_id);
-		});
-
-		/**
-		 * Item-Pickup: Welt -> Inventar
-		 */
-		socket.on("item:pickup:request", async ({ world_item_id, actionzone }) => {
-			try {
-				const player = players.get(socket.id);
-				if (!player) return;
-
-				const wi = worldItems.get(world_item_id);
-				if (!wi) {
-					socket.emit("item:error", { message: "Item already picked up" });
-					return;
-				}
-
-				// Distanz-Check (Server-seitig)
-				const dx = (actionzone.x ?? 0) - wi.x;
-				const dy = (actionzone.y ?? 0) - wi.y;
-				const dist2 = dx * dx + dy * dy;
-				const pickupRange = 64;
-				if (dist2 > pickupRange * pickupRange) {
-					socket.emit("item:error", { message: "Too far away" });
-					return;
-				}
-
-				// Transaktion: world_items -> inventory_items
-				await moveWorldItemToInventory(world_item_id, "player", player.id);
-
-				// In-Memory entfernen + allen mitteilen
-				worldItems.delete(world_item_id);
-				io.emit("item:removed", world_item_id);
-
-				// Inventar des Spielers aktualisieren
-				const inv = await loadInventory("player", player.id);
-				socket.emit("inventory:update", inv);
-			} catch (err) {
-				console.error("item:pickup:request error", err);
-				socket.emit("item:error", { message: err.message ?? "Pickup failed" });
-			}
-		});
-
-		/**
-		 * Item-Drop: Inventar -> Welt
-		 */
-		socket.on("item:drop:request", async ({ item_id, quantity, dropPosition }) => {
-			try {
-				const player = players.get(socket.id);
-				if (!player) return;
-
-				const qty = Math.max(1, Number(quantity) || 1);
-				const px = Math.round(dropPosition["x"] ?? player.x ?? 0);
-				const py = Math.round(dropPosition["y"] ?? player.y ?? 0);
-
-				// Transaktion: inventory_items -> world_items
-				const created = await moveInventoryItemToWorld("player", player.id, item_id, qty, px, py);
-
-				// In-Memory hinzufügen + allen mitteilen
-				worldItems.set(created.id, created);
-				io.emit("item:spawned", created);
-
-				// Inventar des Spielers aktualisieren
-				const inv = await loadInventory("player", player.id);
-				socket.emit("inventory:update", inv);
-			} catch (err) {
-				console.error("item:drop:request error", err);
-				socket.emit("item:error", { message: err.message ?? "Drop failed" });
-			}
-		});
-
-		socket.on("world:resources:remove", async ({ world_resource_id }) => {
-			delete worldResources[world_resource_id];
-			//	RemoveWorldResourceById(world_resource_id);
-			io.emit("world:resources:update", world_resource_id);
-		});
-
-		socket.on("world:item:spawn:request", async ({ amount, itemkey, x, y }) => {
-			await addWorldItembyKey(itemkey, amount, x, y);
-			worldItems.clear();
-			const items = await loadWorldItems();
-			items.forEach((it) => worldItems.set(it.id, it));
-			socket.emit("world:items:init", Array.from(worldItems.values()));
-		});
-
-		/**
-		 * Disconnect
-		 */
 		socket.on("disconnect", (reason) => {
-			const p = players.get(socket.id);
-			if (p) updatePlayer(p).catch((e) => console.error("updatePlayer error", e));
-			console.log(`Player disconnected: ${socket.id}`, reason);
-			players.delete(socket.id);
+			const player = players[socket.id];
+			if (player) updatePlayer(player).catch(console.error);
+
+			delete players[socket.id];
 			io.emit("playerDisconnected", socket.id);
+
+			console.log(`Player disconnected: ${socket.id}`, reason);
+		});
+
+		// ------------------------------
+		// Inventory Events
+		// ------------------------------
+		socket.on("inventory:load", async () => {
+			const player = players[socket.id];
+			if (!player) return;
+
+			loadInventory(player.id).then((items) => {
+				socket.emit("inventory:update:items", items);
+			});
+		});
+
+		// Server: inventory:item:pickup
+		socket.on("inventory:item:pickup", async (inventory_id, item, quantity) => {
+			const player = players[socket.id];
+			if (!player) return;
+
+			const exists = await WorldItemExits(item.world_item_id, quantity);
+			if (!exists) return;
+
+			// Item ins Inventory packen
+			await addItemToInventory(inventory_id, item.item_id, quantity);
+			await removeWorldItem(item.world_item_id, quantity);
+			// Inventory neu laden und zum Client schicken
+			const newInventory = await loadInventory(player.id);
+			socket.emit("inventory:update:items", newInventory);
+
+			worldItems.delete(item.world_item_id);
+			socket.emit("world:item:removed", item.world_item_id);
+			socket.broadcast.emit("world:item:removed", item.world_item_id);
+		});
+
+		socket.on("inventory:item:drop", async (inventory_id, item, quantity) => {
+			const player = players[socket.id];
+
+			if (ItemExistsInInventory(inventory_id, item.item_id, quantity)) {
+				if (removeItemFromInventory(inventory_id, item.item_id, quantity)) {
+					const dropPostion = Functions.getDropPosition(player.x, player.y, player.lastDirection);
+					const newworlditem = await createWorldItem(item.item_id, dropPostion.x, dropPostion.y, quantity);
+
+					worldItems.set(newworlditem.id, newworlditem);
+					socket.emit("world:item:add", newworlditem);
+					socket.broadcast.emit("world:item:add", newworlditem);
+					socket.emit("inventory:item:remove", item, quantity);
+				}
+			}
+		});
+
+		// ------------------------------
+		// Item Events
+		// ------------------------------
+		socket.on("world:items:load", async () => {
+			await ensureWorldItemsLoaded();
+			socket.emit("world:items:update", Array.from(worldItems.values()));
+		});
+
+		socket.on("world:item:spawn:request", async ({ resourceType, x, y }) => {
+			const drops = resourcesDrops[resourceType];
+			if (!drops) return;
+
+			for (const drop of drops) {
+				const chance = drop.chance ?? 1.0;
+				if (Math.random() > chance) continue;
+
+				const quantity = Functions.randomIntRange(drop.min, drop.max);
+				if (quantity <= 0) continue;
+
+				const item = await createWorldItem(
+					drop.item_id,
+					Functions.randomFloatRange(-50, +50) + x,
+					Functions.randomFloatRange(-50, +50) + y,
+					quantity
+				);
+				worldItems.set(item.id, item);
+
+				socket.emit("world:item:add", item);
+				socket.broadcast.emit("world:item:add", item);
+			}
+		});
+
+		// ------------------------------
+		// Resources Events
+		// ------------------------------
+
+		socket.on("world:resources:load", async () => {
+			// 1️⃣ World-Daten aus DB inkl. kompletter Definitionen
+			const dbWorldResources = await loadWorldResources();
+
+			// 2️⃣ Server-State neu aufbauen
+			worldResources.clear();
+
+			for (const wr of dbWorldResources) {
+				worldResources.set(wr.id, {
+					id: wr.id,
+					resource_id: wr.resource_id,
+					x: wr.x,
+					y: wr.y,
+					key: wr.key,
+					name: wr.name,
+					description: wr.description,
+					level: wr.level,
+				});
+			}
+
+			socket.emit("world_resources_update", Array.from(worldResources.values()));
+		});
+
+		socket.on("world:resources:remove", async (world_resource_id) => {
+			//	await RemoveWorldResourceById(world_resource_id);
+			socket.emit("world_resource:removed", world_resource_id);
+			socket.broadcast.emit("world_resource:removed", world_resource_id);
 		});
 	});
 }
