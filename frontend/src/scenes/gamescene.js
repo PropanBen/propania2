@@ -3,12 +3,12 @@ import Phaser from "phaser";
 import { socket } from "../socket.js";
 
 import Player from "../entities/player.js";
+import Animal from "../entities/animal.js";
 import Item from "../entities/items.js";
-import Inventory from "../entities/inventory";
 import Resource from "../entities/resources.js";
 
 import { preloadAssets } from "../assets/utils/gamesceneassetloader.js";
-import { registerPlayerAnimations } from "../assets/utils/animations.js";
+import { registerPlayerAnimations, registerAnimalAnimations } from "../assets/utils/animations.js";
 
 export default class GameScene extends Phaser.Scene {
 	constructor() {
@@ -34,6 +34,7 @@ export default class GameScene extends Phaser.Scene {
 		this.itemsGroup = this.physics.add.staticGroup();
 		this.resourcesGroup = this.physics.add.staticGroup();
 		this.interactablesGroup = this.physics.add.staticGroup();
+		this.animalGroup = this.physics.add.group();
 
 		// Tilemap und Layer
 
@@ -46,6 +47,7 @@ export default class GameScene extends Phaser.Scene {
 
 		// Input keys
 		this.keyE = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
+		this.keyF = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F);
 		this.keyQ = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
 		this.keyI = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.I);
 
@@ -62,6 +64,13 @@ export default class GameScene extends Phaser.Scene {
 			.setScrollFactor(1);
 
 		registerPlayerAnimations(this);
+		registerAnimalAnimations(this);
+
+		const sheep = new Animal(this, { type: "sheep", id: "sheep_1", x: 0, y: 800, health: 100 });
+		const sheep2 = new Animal(this, { type: "sheep", id: "sheep_2", x: 500, y: 800, health: 100 });
+		const sheep3 = new Animal(this, { type: "sheep", id: "sheep_3", x: -500, y: 800, health: 100 });
+		const sheep4 = new Animal(this, { type: "sheep", id: "sheep_4", x: 0, y: 200, health: 100 });
+		const sheep5 = new Animal(this, { type: "sheep", id: "sheep_5", x: -500, y: 2000, health: 100 });
 
 		// ------------------------------
 		// Socket Events
@@ -125,10 +134,16 @@ export default class GameScene extends Phaser.Scene {
 		// Inventory Events
 		// ------------------------------
 
-		socket.on("inventory:update:items", (items) => {
-			// Gets Data after  socket.emit("inventory:load");
-			if (this.localPlayer) this.localPlayer.inventory.loadFromServer(items);
-			if (this.scene.get("UIScene").inventoryUI) this.scene.get("UIScene").inventoryUI.refresh();
+		socket.on("inventory:update:items", (data) => {
+			if (!this.localPlayer) return;
+
+			// 🔐 INVENTAR FILTERN
+			if (data.inventory_id !== this.localPlayer.inventory.inventory_id) return;
+
+			this.localPlayer.inventory.loadFromServer(data);
+
+			const ui = this.scene.get("UIScene")?.inventoryUI;
+			if (ui) ui.refresh();
 		});
 
 		socket.on("inventory:item:remove", () => {
@@ -174,12 +189,17 @@ export default class GameScene extends Phaser.Scene {
 		if (Phaser.Input.Keyboard.JustDown(this.keyE)) {
 			this.localPlayer.interaction.performAction("interact");
 		}
+		if (Phaser.Input.Keyboard.JustDown(this.keyF)) {
+			this.localPlayer.interaction.performAction("attack");
+		}
 		if (Phaser.Input.Keyboard.JustDown(this.keyQ)) {
 			this.localPlayer.interaction.performAction("drop");
 		}
 		if (Phaser.Input.Keyboard.JustDown(this.keyI) && this.localPlayer) {
 			this.events.emit("toggleInventory", this.localPlayer.inventory);
 		}
+
+		this.animalGroup.getChildren().forEach((animal) => animal.update());
 
 		this.updateDepthSorting();
 	}
@@ -191,12 +211,15 @@ export default class GameScene extends Phaser.Scene {
 		this.playerGroup.add(player);
 
 		this.physics.add.collider(player, this.playerGroup);
+		this.physics.add.collider(player, this.animalGroup, (player, animal) => {}, null, this);
 		//	this.physics.add.collider(player, this.itemsGroup);
 		this.physics.add.collider(player, this.resourcesGroup);
 
-		if (isLocal) this.localPlayer = player;
-		if (this.localPlayer) this.events.emit("localPlayerReady", player);
-		if (this.localPlayer) socket.emit("inventory:load");
+		if (isLocal) {
+			this.localPlayer = player;
+			this.events.emit("localPlayerReady", player);
+			socket.emit("inventory:load");
+		}
 	}
 
 	AddItem(info) {
@@ -239,6 +262,7 @@ export default class GameScene extends Phaser.Scene {
 		const movableSprites = [
 			...Object.values(this.players),
 			...this.playerGroup.getChildren(),
+			...this.animalGroup.getChildren(),
 			...this.itemsGroup.getChildren(),
 			...this.resourcesGroup.getChildren(),
 		];

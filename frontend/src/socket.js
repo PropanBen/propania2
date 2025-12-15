@@ -1,12 +1,7 @@
 import { io } from "socket.io-client";
+import API_BASE from "./config/api";
 
-// 🔹 API-URL aus .env laden
-const API_URL =
-	import.meta.env.VITE_APP_ENV === "production"
-		? import.meta.env.VITE_API_URL
-		: `${import.meta.env.VITE_API_PROTOKOLL}://${import.meta.env.VITE_HOST_SERVER}:${import.meta.env.VITE_API_PORT}`;
-
-export const socket = io(API_URL, {
+export const socket = io(API_BASE, {
 	withCredentials: true,
 	transports: ["polling", "websocket"],
 });

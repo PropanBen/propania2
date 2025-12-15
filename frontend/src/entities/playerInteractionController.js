@@ -1,5 +1,6 @@
 import Item from "./items.js";
 import Resource from "./resources.js";
+import Animal from "./animal.js";
 
 export default class PlayerInteractionController {
 	constructor(scene, player) {
@@ -21,8 +22,8 @@ export default class PlayerInteractionController {
 			this.actionzone = this.scene.add.rectangle(
 				this.player.x + this.actionzoneOffset.x,
 				this.player.y + this.actionzoneOffset.y,
-				32,
-				32,
+				48,
+				48,
 				0xffffff,
 				0
 			);
@@ -34,10 +35,17 @@ export default class PlayerInteractionController {
 
 		// Interactables existieren evtl. noch nicht
 		this.interactables = this.scene.interactablesGroup || this.scene.physics.add.group();
+		this.animals = this.scene.animalGroup;
 
 		// Collision detection via physics
 		if (this.actionzone && this.interactables) {
 			this.scene.physics.add.overlap(this.actionzone, this.interactables, (zone, object) => {
+				this.actionTarget = object;
+			});
+		}
+
+		if (this.actionzone && this.animals) {
+			this.scene.physics.add.overlap(this.actionzone, this.animals, (zone, object) => {
 				this.actionTarget = object;
 			});
 		}
@@ -105,6 +113,16 @@ export default class PlayerInteractionController {
 	performAction(type) {
 		// wenn bereits in Aktion, nichts tun
 		if (this.player.state === "action") return;
+
+		if (type === "attack" && this.actionTarget instanceof Animal) {
+			console.log("attacked");
+			const direction = this.player.lastDirection;
+			const animKey = `attack_${direction}`;
+			const duration = this._getAnimationDurationMs(animKey, 2050);
+			this.player.animation.playActionAnimation("attack", duration);
+			this.scene.sound.play("swordswing");
+			this.actionTarget.takeDamage(10);
+		}
 
 		// --- Interact (Pickup) ---
 		if (type === "interact" && this.actionTarget instanceof Item) {

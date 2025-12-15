@@ -1,11 +1,11 @@
 // src/entities/player.js
 import { socket } from "../socket";
 
-import PlayerMovementController from "./PlayerMovementController";
-import PlayerAnimationController from "./PlayerAnimationController";
-import PlayerInteractionController from "./PlayerInteractionController";
-import PlayerCameraController from "./PlayerCameraController";
-import PlayerNetworking from "./PlayerNetworking";
+import PlayerMovementController from "./playerMovementController";
+import PlayerAnimationController from "./playerAnimationController";
+import PlayerInteractionController from "./playerInteractionController";
+import PlayerCameraController from "./playerCameraController";
+import PlayerNetworking from "./playerNetworking";
 import Inventory from "./inventory";
 
 export default class Player extends Phaser.Physics.Arcade.Sprite {

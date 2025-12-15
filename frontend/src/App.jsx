@@ -2,13 +2,11 @@ import React, { useState, useEffect } from "react";
 import Login from "./login.jsx";
 import { startGame, destroyGame } from "./game.jsx";
 import "./App.css";
+import API_BASE from "./config/api";
 
 function App() {
 	const [account, setAccount] = useState(null);
 	const [account_id, setAccount_id] = useState(null);
-
-	// ✅ API-URL aus .env
-	const API_BASE = `${import.meta.env.VITE_API_PROTOKOLL}://${import.meta.env.VITE_API_URL}:${import.meta.env.VITE_API_PORT}`;
 
 	const checkAuth = async () => {
 		try {

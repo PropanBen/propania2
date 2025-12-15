@@ -6,13 +6,14 @@ import {
 	loadWorldItems,
 	WorldItemExits,
 	removeWorldItem,
-	loadInventory,
+	loadInventoryByInventoryId,
 	addItemToInventory,
 	removeItemFromInventory,
 	createWorldItem,
 	ItemExistsInInventory,
 	loadWorldResources,
-	RemoveWorldResourceById,
+	getOrCreateInventory,
+	withTransaction,
 } from "../database/db.js";
 import Functions from "../utils/functions.js";
 import resourcesDrops from "../entities/resourcedrops.js";
@@ -40,7 +41,14 @@ export function initGameServer(io) {
 		// ------------------------------
 		socket.on("playerJoin", async (playerInfo) => {
 			const playerData = await loadPlayerFromDB(playerInfo.id);
-			playerData.inventory_id = playerInfo.inventory_id;
+			if (!playerData) return;
+
+			// ✅ INVENTORY SERVERSEITIG ERMITTELN
+			const inventory_id = await withTransaction(async (conn) => {
+				return await getOrCreateInventory(conn, "player", playerData.id);
+			});
+
+			playerData.inventory_id = inventory_id;
 			playerData.socket_id = socket.id;
 
 			players[socket.id] = playerData;
@@ -80,49 +88,58 @@ export function initGameServer(io) {
 		// ------------------------------
 		// Inventory Events
 		// ------------------------------
+
+		//Inventory Load
 		socket.on("inventory:load", async () => {
 			const player = players[socket.id];
 			if (!player) return;
 
-			loadInventory(player.id).then((items) => {
-				socket.emit("inventory:update:items", items);
-			});
+			const inventory = await loadInventoryByInventoryId(player.inventory_id);
+
+			socket.emit("inventory:update:items", inventory);
 		});
 
-		// Server: inventory:item:pickup
+		// Inventory Pickup
 		socket.on("inventory:item:pickup", async (inventory_id, item, quantity) => {
 			const player = players[socket.id];
 			if (!player) return;
 
+			// 🔐 Sicherheit
+			if (inventory_id !== player.inventory_id) return;
+
 			const exists = await WorldItemExits(item.world_item_id, quantity);
 			if (!exists) return;
 
-			// Item ins Inventory packen
 			await addItemToInventory(inventory_id, item.item_id, quantity);
 			await removeWorldItem(item.world_item_id, quantity);
-			// Inventory neu laden und zum Client schicken
-			const newInventory = await loadInventory(player.id);
+
+			const newInventory = await loadInventoryByInventoryId(inventory_id);
 			socket.emit("inventory:update:items", newInventory);
 
 			worldItems.delete(item.world_item_id);
-			socket.emit("world:item:removed", item.world_item_id);
-			socket.broadcast.emit("world:item:removed", item.world_item_id);
+			io.emit("world:item:removed", item.world_item_id);
 		});
 
+		//Inventory Inventory Item Drop
 		socket.on("inventory:item:drop", async (inventory_id, item, quantity) => {
 			const player = players[socket.id];
+			if (!player) return;
 
-			if (ItemExistsInInventory(inventory_id, item.item_id, quantity)) {
-				if (removeItemFromInventory(inventory_id, item.item_id, quantity)) {
-					const dropPostion = Functions.getDropPosition(player.x, player.y, player.lastDirection);
-					const newworlditem = await createWorldItem(item.item_id, dropPostion.x, dropPostion.y, quantity);
+			if (inventory_id !== player.inventory_id) return;
 
-					worldItems.set(newworlditem.id, newworlditem);
-					socket.emit("world:item:add", newworlditem);
-					socket.broadcast.emit("world:item:add", newworlditem);
-					socket.emit("inventory:item:remove", item, quantity);
-				}
-			}
+			const exists = await ItemExistsInInventory(inventory_id, item.item_id, quantity);
+			if (!exists) return;
+
+			await removeItemFromInventory(inventory_id, item.item_id, quantity);
+
+			const dropPos = Functions.getDropPosition(player.x, player.y, player.lastDirection);
+			const newWorldItem = await createWorldItem(item.item_id, dropPos.x, dropPos.y, quantity);
+
+			worldItems.set(newWorldItem.id, newWorldItem);
+			io.emit("world:item:add", newWorldItem);
+
+			const updatedInventory = await loadInventoryByInventoryId(inventory_id);
+			socket.emit("inventory:update:items", updatedInventory);
 		});
 
 		// ------------------------------

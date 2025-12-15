@@ -3,7 +3,7 @@ import mariadb from "mariadb";
 import dotenv from "dotenv";
 import Functions from "../utils/functions.js";
 import itemsList from "../entities/itemlist.js";
-import resourcesList from "../entities/resourcesList.js";
+import resourcesList from "../entities/resourceslist.js";
 dotenv.config();
 
 export const pool = mariadb.createPool({
@@ -170,6 +170,7 @@ export async function getOrCreateInventory(conn, ownerType, ownerId) {
 	return Number(res.insertId);
 }
 
+/*
 export async function loadInventory(ownerId) {
 	// 1️⃣ DB-Abfrage nur nach item_id und quantity
 	const rows = await query(
@@ -181,11 +182,20 @@ export async function loadInventory(ownerId) {
          ORDER BY ii.item_id ASC`,
 		[ownerId]
 	);
+	*/
 
-	// 2️⃣ Map der Item-Definitionen für schnelles Lookup
+export async function loadInventoryByInventoryId(inventory_id) {
+	const rows = await query(
+		`SELECT ii.item_id, SUM(ii.quantity) AS quantity
+		 FROM inventory_items ii
+		 WHERE ii.inventory_id = ?
+		 GROUP BY ii.item_id
+		 ORDER BY ii.item_id ASC`,
+		[inventory_id]
+	);
+
 	const itemsById = new Map(itemsList.map((item) => [Number(item.item_id), item]));
 
-	// 3️⃣ Map DB-Daten auf Definitionen
 	const items = rows.map((r) => {
 		const def = itemsById.get(Number(r.item_id));
 		return {
@@ -197,6 +207,7 @@ export async function loadInventory(ownerId) {
 	});
 
 	return {
+		inventory_id,
 		capacity: 20,
 		items,
 	};

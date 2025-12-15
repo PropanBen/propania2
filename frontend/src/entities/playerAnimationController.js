@@ -52,7 +52,7 @@ export default class PlayerAnimationController {
 		const direction = this.player.lastDirection;
 		const animKey = `${type}_${direction}`;
 
-		this.player.setVelocity(0, 0);
+		//	this.player.setVelocity(0, 0);
 		this.player.play(animKey, true);
 		this.currentAnim = animKey;
 

@@ -18,29 +18,30 @@ export default class UIScene extends Phaser.Scene {
 		// ------------------------------
 		// UI Elemente
 		// ------------------------------
-		const healthbtn = this.add.sprite(30, 30, "hp").setScale(3);
-		const xpbtn = this.add.sprite(30, 80, "xp").setScale(3);
-		const moneybtn = this.add.sprite(30, 130, "money").setScale(3);
-		const lvlbtn = this.add.sprite(30, 180, "lvl").setScale(3);
+		const healthbtn = this.add.sprite(30, 50, "hp").setScale(4);
+		const xpbtn = this.add.sprite(30, 120, "xp").setScale(4);
+		const moneybtn = this.add.sprite(30, 190, "money").setScale(4);
+		const lvlbtn = this.add.sprite(30, 260, "lvl").setScale(4);
 
-		const ebtn = this.add.sprite(270, window.innerHeight - 100, "e").setScale(3);
-		const qbtn = this.add.sprite(270, window.innerHeight - 200, "q").setScale(3);
-		const plusbtn = this.add.sprite(180, window.innerHeight - 270, "plus").setScale(3);
-		const minusbtn = this.add.sprite(120, window.innerHeight - 270, "minus").setScale(3);
-		const cambtn = this.add.sprite(60, window.innerHeight - 270, "cam").setScale(3);
-		const inventorybtn = this.add.sprite(270, window.innerHeight - 270, "inventory").setScale(3);
+		const ebtn = this.add.sprite(window.innerWidth - 150, window.innerHeight - 100, "e").setScale(4);
+		const fbtn = this.add.sprite(window.innerWidth - 150, window.innerHeight - 200, "f").setScale(4);
+		const qbtn = this.add.sprite(window.innerWidth - 50, window.innerHeight - 200, "q").setScale(4);
+		const plusbtn = this.add.sprite(220, window.innerHeight - 230, "plus").setScale(4);
+		const minusbtn = this.add.sprite(220, window.innerHeight - 80, "minus").setScale(4);
+		const cambtn = this.add.sprite(100, window.innerHeight - 290, "cam").setScale(4);
+		const inventorybtn = this.add.sprite(window.innerWidth - 50, window.innerHeight - 100, "inventory").setScale(4);
 
 		this.healthText = this.add.text(60, 20, "", Functions.defaultTextStyle);
 		this.xpText = this.add.text(60, 70, "0", Functions.defaultTextStyle);
 		this.moneyText = this.add.text(60, 120, "0", Functions.defaultTextStyle);
 		this.lvlText = this.add.text(60, 170, "1", Functions.defaultTextStyle);
 
-		[ebtn, qbtn, plusbtn, minusbtn, cambtn, inventorybtn].forEach((btn) => btn.setInteractive({ useHandCursor: true }));
+		[ebtn, fbtn, qbtn, plusbtn, minusbtn, cambtn, inventorybtn].forEach((btn) => btn.setInteractive({ useHandCursor: true }));
 
 		// ------------------------------
 		// InventoryUI erstellen (leer)
 		// ------------------------------
-		this.inventoryUI = new InventoryUI(this, { items: [] });
+		this.inventoryUI = new InventoryUI(this, null);
 
 		// Inventory Button klick
 		inventorybtn.on("pointerdown", () => this.toggleInventoryUI());
@@ -54,16 +55,15 @@ export default class UIScene extends Phaser.Scene {
 		this.gameScene.events.on("localPlayerReady", (player) => {
 			this.player = player;
 
+			// INVENTORY VERBINDEN
+			this.inventoryUI.inventory = player.inventory;
+
 			plusbtn.on("pointerdown", () => player.camera?.zoomIn());
 			minusbtn.on("pointerdown", () => player.camera?.zoomOut());
 			cambtn.on("pointerdown", () => player.camera?.toggleFreeMode());
 			ebtn.on("pointerdown", () => player.interaction?.performAction("interact"));
+			fbtn.on("pointerdown", () => player.interaction?.performAction("attack"));
 			qbtn.on("pointerdown", () => player.interaction?.performAction("drop"));
-
-			// Items setzen, falls Player Inventory hat
-			if (player.inventory) {
-				this.inventoryUI.inventory = player.inventory;
-			}
 		});
 
 		// ------------------------------
@@ -92,7 +92,7 @@ export default class UIScene extends Phaser.Scene {
 		const radius = 80;
 		const innerRadius = 40;
 		const cx = 100;
-		const cy = this.cameras.main.height - 150;
+		const cy = window.innerHeight - 150;
 
 		this.joyBG = this.add.graphics();
 		this.joyBG.fillStyle(0x000000, 0.5);

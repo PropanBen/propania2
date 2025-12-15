@@ -18,7 +18,7 @@ export default class PlayerCameraController {
 	// -------------------------------------------------------------
 	initCameraFollow() {
 		this.camera.startFollow(this.player);
-		this.camera.setZoom(1);
+		this.camera.setZoom(2);
 	}
 
 	// -------------------------------------------------------------

@@ -10,7 +10,8 @@ const itemsList = [
 	{ item_id: "7", key: "shield", name: "Shield", description: "To Protect you", frame: 4, price: 120 },
 	{ item_id: "2", key: "log", name: "Log", description: "Hard as Wood", frame: 3, price: 5 },
 	{ item_id: "3", key: "stone", name: "Stone", description: "Hard as a Rock", frame: 11, price: 5 },
-	// ...weitere Items hier hinzufügen
+	{ item_id: "8", key: "meat", name: "meat", description: "Well done or Rare you should compare", frame: 31, price: 5 },
+	{ item_id: "9", key: "wool", name: "Wool", description: "Soft and fluffy", frame: 32, price: 5 },
 ];
 
 export default itemsList;

@@ -61,6 +61,8 @@ export default class InventoryUI {
 
 	// Inventarliste aktualisieren
 	refresh() {
+		if (!this.inventory || !this.inventory.items) return;
+
 		this.itemList.removeAll(true);
 		let y = 0;
 
@@ -81,36 +83,44 @@ export default class InventoryUI {
 			// Menge Text
 			const quantityText = this.scene.add.text(200, y + 5, `x${item.quantity}`, { fontSize: "16px", color: "#000000ff" });
 
-			// Drop-Menge Feld
-			let dropAmount = 1;
-			const dropInput = this.scene.add.text(255, y + 10, dropAmount.toString(), { fontSize: "16px", color: "#000000ff" }).setOrigin(0.5);
+			// Standard Drop-Menge
+			if (!item.dropAmount) item.dropAmount = 1;
 
-			// Pfeile
+			const dropInput = this.scene.add
+				.text(255, y + 10, item.dropAmount.toString(), { fontSize: "16px", color: "#000000ff" })
+				.setOrigin(0.5);
+
+			// Minus-Button springt auf maximale Menge
 			const minusArrow = this.scene.add
 				.text(235, y + 5, "-", { fontSize: "16px", color: "#ff5555" })
 				.setInteractive()
 				.on("pointerdown", () => {
-					dropAmount = Math.max(1, dropAmount - 1);
-					dropInput.setText(dropAmount.toString());
+					if (item.dropAmount <= 1) {
+						// Springe auf maximale Menge
+						item.dropAmount = item.quantity;
+					} else {
+						// Normalerweise 1 abziehen
+						item.dropAmount = Math.max(1, item.dropAmount - 1);
+					}
+					dropInput.setText(item.dropAmount.toString());
 				});
 
+			// Plus-Button wie bisher
 			const plusArrow = this.scene.add
 				.text(265, y + 5, "+", { fontSize: "16px", color: "#00aa00" })
 				.setInteractive()
 				.on("pointerdown", () => {
-					dropAmount = Math.min(item.quantity, dropAmount + 1);
-					dropInput.setText(dropAmount.toString());
+					item.dropAmount = Math.min(item.quantity, item.dropAmount + 1);
+					dropInput.setText(item.dropAmount.toString());
 				});
 
-			// Drop Button
+			// Drop-Button
 			const dropBtn = this.scene.add
 				.text(285, y + 5, "Drop", { fontSize: "16px", color: "#ff0000" })
 				.setInteractive()
 				.on("pointerdown", () => {
-					if (this.inventory.dropItem) {
-						this.inventory.dropItem(this.inventory.inventory_id, item, dropAmount);
-						this.scene.sound.play("drop");
-					}
+					this.inventory.dropItem(this.inventory.inventory_id, item, item.dropAmount);
+					this.scene.sound.play("drop");
 				});
 
 			this.itemList.add([icon, name, quantityText, minusArrow, dropInput, plusArrow, dropBtn]);

@@ -28,6 +28,10 @@ export function registerPlayerAnimations(scene) {
 		{ key: "rock_down", row: 59, startColumn: 4, endColumn: 0, frameRate: 6, repeat: 0 },
 		{ key: "rock_left", row: 60, startColumn: 4, endColumn: 0, frameRate: 6, repeat: 0 },
 		{ key: "rock_right", row: 61, startColumn: 4, endColumn: 0, frameRate: 6, repeat: 0 },
+		{ key: "attack_up", row: 62, startColumn: 0, endColumn: 5, frameRate: 10, repeat: 0 },
+		{ key: "attack_down", row: 65, startColumn: 0, endColumn: 5, frameRate: 10, repeat: 0 },
+		{ key: "attack_left", row: 64, startColumn: 0, endColumn: 5, frameRate: 10, repeat: 0 },
+		{ key: "attack_right", row: 63, startColumn: 5, endColumn: 0, frameRate: 10, repeat: 0 },
 	];
 
 	animations.forEach((anim) => {
@@ -41,9 +45,48 @@ export function registerPlayerAnimations(scene) {
 			repeat: anim.repeat ?? -1,
 		});
 	});
+
+	function getFrameIndex(row, column) {
+		const SPRITESHEET_COLUMNS = 13;
+		return row * SPRITESHEET_COLUMNS + column;
+	}
 }
 
-function getFrameIndex(row, column) {
-	const SPRITESHEET_COLUMNS = 13;
-	return row * SPRITESHEET_COLUMNS + column;
+export function registerAnimalAnimations(scene) {
+	const animations = [
+		{ key: "sheep_idle_up", row: 3, startColumn: 0, endColumn: 2, frameRate: 3 },
+		{ key: "sheep_idle_down", row: 0, startColumn: 1, endColumn: 2, frameRate: 3 },
+		{ key: "sheep_idle_left", row: 1, startColumn: 0, endColumn: 0, frameRate: 3 },
+		{ key: "sheep_idle_right", row: 2, startColumn: 2, endColumn: 2, frameRate: 3 },
+		{ key: "sheep_walk_up", row: 3, startColumn: 0, endColumn: 2, frameRate: 3 },
+		{ key: "sheep_walk_down", row: 0, startColumn: 0, endColumn: 2, frameRate: 3 },
+		{ key: "sheep_walk_left", row: 1, startColumn: 0, endColumn: 2, frameRate: 3 },
+		{ key: "sheep_walk_right", row: 2, startColumn: 0, endColumn: 2, frameRate: 3 },
+		{ key: "sheep_run_up", row: 3, startColumn: 0, endColumn: 2, frameRate: 6 },
+		{ key: "sheep_run_down", row: 0, startColumn: 0, endColumn: 2, frameRate: 6 },
+		{ key: "sheep_run_left", row: 1, startColumn: 0, endColumn: 2, frameRate: 6 },
+		{ key: "sheep_run_right", row: 2, startColumn: 0, endColumn: 2, frameRate: 6 },
+		{ key: "sheep_attack_up", row: 3, startColumn: 0, endColumn: 2, frameRate: 3 },
+		{ key: "sheep_attack_down", row: 3, startColumn: 0, endColumn: 2, frameRate: 3 },
+		{ key: "sheep_attack_left", row: 3, startColumn: 0, endColumn: 2, frameRate: 3 },
+		{ key: "sheep_attack_right", row: 3, startColumn: 0, endColumn: 2, frameRate: 3 },
+		{ key: "sheep_death", row: 4, startColumn: 0, endColumn: 2, frameRate: 0.5, repeat: 0 },
+	];
+
+	animations.forEach((anim) => {
+		scene.anims.create({
+			key: anim.key,
+			frames: scene.anims.generateFrameNumbers("sheep", {
+				start: getFrameIndex(anim.row, anim.startColumn),
+				end: getFrameIndex(anim.row, anim.endColumn),
+			}),
+			frameRate: anim.frameRate,
+			repeat: anim.repeat ?? -1,
+		});
+	});
+
+	function getFrameIndex(row, column) {
+		const SPRITESHEET_COLUMNS = 3;
+		return row * SPRITESHEET_COLUMNS + column;
+	}
 }

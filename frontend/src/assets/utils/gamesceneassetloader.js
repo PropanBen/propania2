@@ -1,8 +1,18 @@
 export function preloadAssets(scene) {
+	//player
 	const playerUrl = new URL("../players/Player_Template.png", import.meta.url).href;
 	scene.load.spritesheet("player", playerUrl, {
 		frameWidth: 64,
 		frameHeight: 64,
+	});
+
+	//Animals
+
+	// Sheep
+	const sheepUrl = new URL("../animals/sheep.png", import.meta.url).href;
+	scene.load.spritesheet("sheep", sheepUrl, {
+		frameWidth: 32,
+		frameHeight: 32,
 	});
 
 	// Map
@@ -51,6 +61,9 @@ export function preloadAssets(scene) {
 	const eURL = new URL("../ui/e.png", import.meta.url).href;
 	scene.load.image("e", eURL);
 
+	const fURL = new URL("../ui/f.png", import.meta.url).href;
+	scene.load.image("f", fURL);
+
 	const qURL = new URL("../ui/q.png", import.meta.url).href;
 	scene.load.image("q", qURL);
 
@@ -88,4 +101,10 @@ export function preloadAssets(scene) {
 
 	const rockbreaksURL = new URL("../sounds/rockbreaks.mp3", import.meta.url).href;
 	scene.load.audio("rockbreaks", rockbreaksURL);
+
+	const swordswingURL = new URL("../sounds/swordswing.mp3", import.meta.url).href;
+	scene.load.audio("swordswing", swordswingURL);
+
+	const sheepbleatURL = new URL("../sounds/sheepbleat.mp3", import.meta.url).href;
+	scene.load.audio("sheepbleat", sheepbleatURL);
 }
