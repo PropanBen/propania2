@@ -9,11 +9,16 @@ export default class UIScene extends Phaser.Scene {
 		this.joystickVector = { x: 0, y: 0 };
 		this.inventoryUI = null;
 		this.player = null;
+
+		//Chat
+		this.chatContainer = null;
 	}
 
 	create() {
 		this.socket = socket;
 		this.gameScene = this.scene.get("GameScene");
+		this.chatMessages = [];
+		this.createChatUI();
 
 		// ------------------------------
 		// UI Elemente
@@ -39,23 +44,18 @@ export default class UIScene extends Phaser.Scene {
 		[ebtn, fbtn, qbtn, plusbtn, minusbtn, cambtn, inventorybtn].forEach((btn) => btn.setInteractive({ useHandCursor: true }));
 
 		// ------------------------------
-		// InventoryUI erstellen (leer)
+		// InventoryUI
 		// ------------------------------
 		this.inventoryUI = new InventoryUI(this, null);
-
-		// Inventory Button klick
 		inventorybtn.on("pointerdown", () => this.toggleInventoryUI());
-
-		// Tastatur I
-		this.input.keyboard.on("keydown-I", () => this.toggleInventoryUI());
+		//this.input.keyboard.on("keydown-I", () => this.toggleInventoryUI());
+		//this.input.keyboard.on("keydown-T", () => this.toggleChat());
 
 		// ------------------------------
 		// Player ready
 		// ------------------------------
 		this.gameScene.events.on("localPlayerReady", (player) => {
 			this.player = player;
-
-			// INVENTORY VERBINDEN
 			this.inventoryUI.inventory = player.inventory;
 
 			plusbtn.on("pointerdown", () => player.camera?.zoomIn());
@@ -73,21 +73,37 @@ export default class UIScene extends Phaser.Scene {
 		this.game.events.on("playerMoneyChanged", (m) => this.moneyText.setText(`${m}`));
 		this.game.events.on("playerExpChanged", (xp) => this.xpText.setText(`${xp}`));
 		this.game.events.on("playerLevelChanged", (lvl) => this.lvlText.setText(`${lvl}`));
+		this.game.events.on("toggleInventory", () => this.toggleInventoryUI());
+		this.game.events.on("toggleChat", () => this.toggleChat());
 
 		// ------------------------------
 		// Joystick
 		// ------------------------------
 		this.createJoystick();
+
+		// Socket Event
+		socket.on("chat:message", ({ playerName, message }) => {
+			this.chatMessages.push(`${playerName}: ${message}`);
+			if (this.chatMessages.length > 10) this.chatMessages.shift();
+			this.chatText.setText(this.chatMessages.join("\n"));
+
+			// Optional: Zeige die Nachricht auch über Spieler Dialogbox
+			const player = this.gameScene.players[socket.id];
+			if (player) player.showDialog(`${playerName}: ${message}`, 4000);
+		});
 	}
 
+	// =================================================
+	// INVENTORY
+	// =================================================
 	toggleInventoryUI() {
 		if (!this.inventoryUI) return;
 		this.inventoryUI.toggle();
 	}
 
-	// -------------------------------------------------
+	// =================================================
 	// JOYSTICK
-	// -------------------------------------------------
+	// =================================================
 	createJoystick() {
 		const radius = 80;
 		const innerRadius = 40;
@@ -146,5 +162,50 @@ export default class UIScene extends Phaser.Scene {
 
 	getJoystickVector() {
 		return this.joystickVector;
+	}
+
+	createChatUI() {
+		const width = 300;
+		const height = 200;
+
+		this.chatContainer = this.add.container(10, window.innerHeight - 600).setDepth(1200);
+		this.chatContainer.setVisible(false);
+
+		// Hintergrund
+		const bg = this.add.rectangle(0, 0, width, height, 0x000000, 0.5).setOrigin(0, 0);
+		this.chatContainer.add(bg);
+
+		// Chat Text
+		this.chatText = this.add.text(5, 5, "", { fontSize: "14px", color: "#fff", wordWrap: { width: width - 10 } });
+		this.chatContainer.add(this.chatText);
+
+		// Eingabefeld (HTML Input Overlay)
+		this.chatInput = document.createElement("input");
+		this.chatInput.type = "text";
+		this.chatInput.style.position = "absolute";
+		this.chatInput.style.left = "10px";
+		this.chatInput.style.top = `${window.innerHeight - 370}px`;
+		this.chatInput.style.width = `${width}px`;
+		this.chatInput.style.zIndex = 1000;
+		document.body.appendChild(this.chatInput);
+		this.chatInput.style.display = "none";
+
+		this.chatInput.addEventListener("keydown", (e) => {
+			if (e.key === "Enter") {
+				const msg = this.chatInput.value.trim();
+				if (msg) {
+					socket.emit("chat:message", msg);
+					this.chatInput.value = "";
+				}
+			}
+		});
+	}
+
+	toggleChat() {
+		if (!this.chatContainer) return;
+		this.chatContainer.setVisible(!this.chatContainer.visible);
+
+		// Optional auch das Input-Feld ein-/ausblenden
+		if (this.chatInput) this.chatInput.style.display = this.chatContainer.visible ? "block" : "none";
 	}
 }

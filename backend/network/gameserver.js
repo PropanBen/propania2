@@ -75,6 +75,12 @@ export function initGameServer(io) {
 			});
 		});
 
+		socket.on("Request:Show:Dialogbox", (text) => {
+			console.log(text);
+			socket.emit("Show:Dialogbox", text);
+			socket.broadcast.emit("Show:Dialogbox", text);
+		});
+
 		socket.on("disconnect", (reason) => {
 			const player = players[socket.id];
 			if (player) updatePlayer(player).catch(console.error);
@@ -205,6 +211,31 @@ export function initGameServer(io) {
 			//	await RemoveWorldResourceById(world_resource_id);
 			socket.emit("world_resource:removed", world_resource_id);
 			socket.broadcast.emit("world_resource:removed", world_resource_id);
+		});
+
+		// Chat
+		socket.on("chat:message", (msg) => {
+			const player = players[socket.id];
+			if (!player) return;
+
+			const payload = {
+				playerName: player.name,
+				message: msg,
+			};
+
+			// Sende an alle Spieler
+			io.emit("chat:message", payload);
+			io.emit("Show:Dialogbox", payload.playerName + " : " + payload.message);
+		});
+
+		// Fehler-Handler: sende alle Serverfehler an Spieler Dialogbox
+		process.on("uncaughtException", (err) => {
+			console.error(err);
+			io.emit("Show:Dialogbox", `Server Error: ${err.message}`);
+		});
+		process.on("unhandledRejection", (reason) => {
+			console.error(reason);
+			io.emit("Show:Dialogbox", `Server Error: ${reason}`);
 		});
 	});
 }

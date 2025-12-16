@@ -74,6 +74,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 			this.camera = new PlayerCameraController(scene, this);
 			this.interaction = new PlayerInteractionController(scene, this);
 		}
+
+		this.createDialogBox();
 	}
 
 	// -------------------------------------------------------------
@@ -90,6 +92,10 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
 		// NameTag immer mitziehen
 		if (this.nameText) this.nameText.setPosition(this.x, this.y - 40);
+
+		if (this.dialogContainer) {
+			this.dialogContainer.setPosition(this.x, this.y - 60);
+		}
 	}
 
 	// -------------------------------------------------------------
@@ -163,5 +169,47 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 		}
 
 		super.destroy(fromScene);
+	}
+
+	createDialogBox() {
+		const spriteKey = "playerspeakbox"; // dein 32x32 Sprite
+
+		// Hintergrund-Sprite einmalig erstellen, bleibt unverändert
+		this.dialogBG = this.scene.add.sprite(0, -60, spriteKey).setOrigin(0.5).setDepth(1000);
+
+		// Text
+		this.dialogText = this.scene.add
+			.text(0, -60, "", {
+				fontSize: "20px",
+				color: "#000000",
+				align: "center",
+				wordWrap: { width: 200 }, // max. Textbreite
+			})
+			.setOrigin(0.5)
+			.setDepth(1001);
+
+		// Container
+		this.dialogContainer = this.scene.add.container(this.x, this.y, [this.dialogBG, this.dialogText]).setDepth(1000).setVisible(false);
+	}
+
+	showDialog(text, duration = 5000) {
+		if (!this.dialogContainer) return;
+
+		this.dialogText.setText(text);
+
+		// Passe Hintergrund-Sprite an Textgröße an
+		const padding = 10; // Abstand um den Text
+		const bgWidth = Math.max(this.dialogText.width + padding * 2, 32); // min 32px
+		const bgHeight = Math.max(this.dialogText.height + padding * 2, 32);
+
+		// Sprite skalieren, um den Text zu umschließen
+		this.dialogBG.setDisplaySize(bgWidth, bgHeight);
+
+		this.dialogContainer.setVisible(true);
+
+		// Auto-close
+		this.scene.time.delayedCall(duration, () => {
+			if (this.dialogContainer) this.dialogContainer.setVisible(false);
+		});
 	}
 }

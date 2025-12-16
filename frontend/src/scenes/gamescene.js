@@ -50,6 +50,7 @@ export default class GameScene extends Phaser.Scene {
 		this.keyF = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F);
 		this.keyQ = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
 		this.keyI = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.I);
+		this.keyT = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.T);
 
 		this.interactText = this.add
 			.text(0, 0, "[E] Pick up", {
@@ -112,7 +113,9 @@ export default class GameScene extends Phaser.Scene {
 
 		socket.on("world:items:update", (itemData) => {
 			this.worldItems = {};
-			this.itemsGroup.clear();
+			if (this.itemsGroup && !this.itemsGroup.destroyed) {
+				this.itemsGroup.clear(true, true);
+			}
 			this.clearByClass(Item);
 			itemData.forEach((item) => {
 				// info: { id, item_id, key, name, x, y, quantity }
@@ -156,8 +159,9 @@ export default class GameScene extends Phaser.Scene {
 
 		socket.on("world_resources_update", (resources) => {
 			this.clearByClass(Resource);
-			this.resourcesGroup.clear();
-			// Ressourcen hinzufügen
+			if (this.resourcesGroup && !this.resourcesGroup.destroyed) {
+				this.resourcesGroup.clear(true, true);
+			}
 			this.addResources(resources);
 		});
 
@@ -169,6 +173,26 @@ export default class GameScene extends Phaser.Scene {
 				res.destroy();
 				delete this.resources[world_resource_id];
 			}
+		});
+
+		socket.on("Show:Dialogbox", (text) => {
+			this.localPlayer.showDialog(text);
+		});
+
+		// ------------------------------
+		// On Scene Shutdown deregister Socket Events
+		// ------------------------------
+
+		this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+			socket.off("currentPlayers");
+			socket.off("newPlayer");
+			socket.off("updatePlayers");
+			socket.off("playerDisconnected");
+			socket.off("world:items:update");
+			socket.off("world:item:add");
+			socket.off("world:item:removed");
+			socket.off("world_resources_update");
+			socket.off("world_resource:removed");
 		});
 
 		// ------------------------------
@@ -196,7 +220,10 @@ export default class GameScene extends Phaser.Scene {
 			this.localPlayer.interaction.performAction("drop");
 		}
 		if (Phaser.Input.Keyboard.JustDown(this.keyI) && this.localPlayer) {
-			this.events.emit("toggleInventory", this.localPlayer.inventory);
+			this.game.events.emit("toggleInventory", this.localPlayer.inventory);
+		}
+		if (Phaser.Input.Keyboard.JustDown(this.keyT) && this.localPlayer) {
+			this.game.events.emit("toggleChat");
 		}
 
 		this.animalGroup.getChildren().forEach((animal) => animal.update());
@@ -205,14 +232,15 @@ export default class GameScene extends Phaser.Scene {
 	}
 
 	addPlayer(playerInfo, isLocal) {
+		if (!this.scene.isActive()) return;
+		if (!this.playerGroup) return;
+
 		const player = new Player(this, playerInfo);
-		//this.players[socket.id] = player;
 		this.players[playerInfo.socket_id] = player;
 		this.playerGroup.add(player);
 
 		this.physics.add.collider(player, this.playerGroup);
-		this.physics.add.collider(player, this.animalGroup, (player, animal) => {}, null, this);
-		//	this.physics.add.collider(player, this.itemsGroup);
+		this.physics.add.collider(player, this.animalGroup);
 		this.physics.add.collider(player, this.resourcesGroup);
 
 		if (isLocal) {
@@ -245,9 +273,13 @@ export default class GameScene extends Phaser.Scene {
 	}
 
 	clearByClass(classType) {
-		this.interactablesGroup.getChildren().forEach((child) => {
+		if (!this.interactablesGroup || this.interactablesGroup.destroyed) return;
+
+		const children = this.interactablesGroup.getChildren();
+		if (!children) return;
+
+		children.forEach((child) => {
 			if (child instanceof classType) {
-				// Aus Gruppe entfernen und zerstören
 				this.interactablesGroup.remove(child, true, true);
 			}
 		});
@@ -260,12 +292,11 @@ export default class GameScene extends Phaser.Scene {
 
 		// Alle beweglichen Sprites: Spieler, Items, Ressourcen
 		const movableSprites = [
-			...Object.values(this.players),
 			...this.playerGroup.getChildren(),
 			...this.animalGroup.getChildren(),
 			...this.itemsGroup.getChildren(),
 			...this.resourcesGroup.getChildren(),
-		];
+		].filter((s) => s && s.active && s.body);
 
 		// Sortiere nach "Bodenhöhe" (y + body.height)
 		movableSprites.sort((a, b) => {

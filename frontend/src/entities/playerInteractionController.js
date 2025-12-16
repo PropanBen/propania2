@@ -1,6 +1,7 @@
 import Item from "./items.js";
 import Resource from "./resources.js";
 import Animal from "./animal.js";
+import { socket } from "../socket.js";
 
 export default class PlayerInteractionController {
 	constructor(scene, player) {
@@ -114,14 +115,13 @@ export default class PlayerInteractionController {
 		// wenn bereits in Aktion, nichts tun
 		if (this.player.state === "action") return;
 
-		if (type === "attack" && this.actionTarget instanceof Animal) {
-			console.log("attacked");
+		if (type === "attack") {
 			const direction = this.player.lastDirection;
 			const animKey = `attack_${direction}`;
 			const duration = this._getAnimationDurationMs(animKey, 2050);
 			this.player.animation.playActionAnimation("attack", duration);
 			this.scene.sound.play("swordswing");
-			this.actionTarget.takeDamage(10);
+			if (this.actionTarget instanceof Animal) this.actionTarget.takeDamage(10);
 		}
 
 		// --- Interact (Pickup) ---

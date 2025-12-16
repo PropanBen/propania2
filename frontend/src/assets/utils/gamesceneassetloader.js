@@ -6,6 +6,12 @@ export function preloadAssets(scene) {
 		frameHeight: 64,
 	});
 
+	const playerspeakboxURL = new URL("../ui/playerspeakbox.png", import.meta.url).href;
+	scene.load.spritesheet("playerspeakbox", playerspeakboxURL, {
+		frameWidth: 32,
+		frameHeight: 32,
+	});
+
 	//Animals
 
 	// Sheep

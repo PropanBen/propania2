@@ -164,9 +164,13 @@ export async function deleteWorldItem(world_item_id) {
 
 export async function getOrCreateInventory(conn, ownerType, ownerId) {
 	const rows = await conn.query("SELECT id FROM inventories WHERE owner_type = ? AND owner_id = ?", [ownerType, ownerId]);
-	if (rows.length > 0) return Number(rows[0].id);
 
-	const res = await conn.query("INSERT INTO inventories (owner_type, owner_id,capacity) VALUES (?, ?,?)", [ownerType, ownerId], 10);
+	if (rows.length > 0) {
+		return Number(rows[0].id);
+	}
+
+	const res = await conn.query("INSERT INTO inventories (owner_type, owner_id, capacity) VALUES (?, ?, ?)", [ownerType, ownerId, 10]);
+
 	return Number(res.insertId);
 }
 
