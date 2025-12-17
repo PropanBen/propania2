@@ -74,12 +74,6 @@ export default class Resource extends Phaser.Physics.Arcade.Sprite {
 	spawnItems(quantity) {
 		let item_id = null;
 
-		if (this.resourceType === "tree") {
-			item_id = 2;
-		} else if (this.resourceType === "rock") {
-			item_id = 3;
-		}
-
 		socket.emit("world:item:spawn:request", {
 			resourceType: this.resourceType,
 			x: this.x,

@@ -3,9 +3,11 @@ import Phaser from "phaser";
 import { socket } from "../socket.js";
 
 import Player from "../entities/player.js";
+import NPC from "../entities/npc.js";
 import Animal from "../entities/animal.js";
 import Item from "../entities/items.js";
 import Resource from "../entities/resources.js";
+import WorldObject from "../entities/worldobjects.js";
 
 import { preloadAssets } from "../assets/utils/gamesceneassetloader.js";
 import { registerPlayerAnimations, registerAnimalAnimations } from "../assets/utils/animations.js";
@@ -31,10 +33,12 @@ export default class GameScene extends Phaser.Scene {
 		this.scene.launch("UIScene");
 		// Groups
 		this.playerGroup = this.physics.add.group();
+		this.npcGroup = this.physics.add.group();
+		this.animalGroup = this.physics.add.group();
 		this.itemsGroup = this.physics.add.staticGroup();
 		this.resourcesGroup = this.physics.add.staticGroup();
 		this.interactablesGroup = this.physics.add.staticGroup();
-		this.animalGroup = this.physics.add.group();
+		this.worldobjectsGroup = this.physics.add.staticGroup();
 
 		// Tilemap und Layer
 
@@ -66,6 +70,15 @@ export default class GameScene extends Phaser.Scene {
 
 		registerPlayerAnimations(this);
 		registerAnimalAnimations(this);
+
+		//NPCs
+
+		this.merchant = new NPC(this, 0, 1000, "merchant", "Merchant", "trader", "start_merchant");
+		this.merchant.setScale(1.7);
+
+		this.merchantcart = new WorldObject(this, 200, 1000, "merchantcart", "cart");
+
+		// Animals
 
 		const sheep = new Animal(this, { type: "sheep", id: "sheep_1", x: 0, y: 800, health: 100 });
 		const sheep2 = new Animal(this, { type: "sheep", id: "sheep_2", x: 500, y: 800, health: 100 });
@@ -179,6 +192,11 @@ export default class GameScene extends Phaser.Scene {
 			this.localPlayer.showDialog(text);
 		});
 
+		//Sounds
+		socket.on("Play:Sound:Coin", () => {
+			this.sound.play("coin");
+		});
+
 		// ------------------------------
 		// On Scene Shutdown deregister Socket Events
 		// ------------------------------
@@ -238,10 +256,11 @@ export default class GameScene extends Phaser.Scene {
 		const player = new Player(this, playerInfo);
 		this.players[playerInfo.socket_id] = player;
 		this.playerGroup.add(player);
-
 		this.physics.add.collider(player, this.playerGroup);
+		this.physics.add.collider(player, this.npcGroup);
 		this.physics.add.collider(player, this.animalGroup);
 		this.physics.add.collider(player, this.resourcesGroup);
+		this.physics.add.collider(player, this.worldobjectsGroup);
 
 		if (isLocal) {
 			this.localPlayer = player;
@@ -293,9 +312,11 @@ export default class GameScene extends Phaser.Scene {
 		// Alle beweglichen Sprites: Spieler, Items, Ressourcen
 		const movableSprites = [
 			...this.playerGroup.getChildren(),
+			...this.npcGroup.getChildren(),
 			...this.animalGroup.getChildren(),
 			...this.itemsGroup.getChildren(),
 			...this.resourcesGroup.getChildren(),
+			...this.worldobjectsGroup.getChildren(),
 		].filter((s) => s && s.active && s.body);
 
 		// Sortiere nach "Bodenhöhe" (y + body.height)

@@ -14,14 +14,18 @@ import {
 	loadWorldResources,
 	getOrCreateInventory,
 	withTransaction,
+	PlayerRemoveMoney,
+	PlayerAddMoney,
 } from "../database/db.js";
 import Functions from "../utils/functions.js";
 import resourcesDrops from "../entities/resourcedrops.js";
+import itemsList from "../entities/itemlist.js";
 
 export function initGameServer(io) {
 	const players = {};
 	const worldItems = new Map();
 	const worldResources = new Map();
+	const npcInventories = new Map();
 
 	async function ensureWorldItemsLoaded() {
 		if (worldItems.size > 0) return;
@@ -35,6 +39,15 @@ export function initGameServer(io) {
 
 	io.on("connection", async (socket) => {
 		console.log(`Player connected: ${socket.id}`);
+
+		function createMerchantNPC(id, name, x, y, items) {
+			npcInventories.set(id, { id, name, x, y, items });
+		}
+
+		createMerchantNPC("start_merchant", "Baldur", 0, 1000, [
+			{ item_id: 20, key: "pickaxe", name: "Pickaxe", quantity: 1, price: 100 },
+			{ item_id: 21, key: "axe", name: "Axe", quantity: 1, price: 100 },
+		]);
 
 		// ------------------------------
 		// Player Events
@@ -180,6 +193,77 @@ export function initGameServer(io) {
 			}
 		});
 
+		socket.on("inventory:item:buy", async (npcId, itemId, quantity) => {
+			const player = players[socket.id];
+			const npcInventory = npcInventories.get(npcId);
+			if (!player || !npcInventory) return;
+
+			const item = npcInventory.items.find((i) => i.item_id === itemId);
+			if (!item || item.quantity < quantity) return;
+
+			const totalPrice = item.price * quantity;
+
+			// Spieler zuerst prüfen
+			const result = await PlayerRemoveMoney(player.id, totalPrice);
+
+			if (!result.success) {
+				io.emit("Show:Dialogbox", "Not enough money. Current balance: " + result.newBalance);
+				return;
+			}
+
+			// Geld erfolgreich abgezogen → Item hinzufügen
+			await addItemToInventory(player.inventory_id, item.item_id, quantity);
+			const updatedInventory = await loadInventoryByInventoryId(player.inventory_id);
+			socket.emit("inventory:update:items", updatedInventory);
+			socket.emit("player:money:update", result.newBalance);
+			socket.emit("Play:Sound:Coin");
+		});
+
+		socket.on("inventory:item:sell", async (npcId, itemId, quantity) => {
+			const player = players[socket.id];
+			if (!player) return;
+
+			// 1️⃣ Inventar frisch aus DB laden
+			const inventory = await loadInventoryByInventoryId(player.inventory_id);
+			if (!inventory || !inventory.items) return;
+
+			// 2️⃣ Item im Inventar suchen
+			const item = inventory.items.find((i) => i.item_id === itemId);
+			if (!item || item.quantity < quantity) {
+				socket.emit("Show:Dialogbox", "Not enough items to sell.");
+				return;
+			}
+
+			const itemDef = itemsList.find((i) => Number(i.item_id) === Number(itemId));
+			if (!itemDef) {
+				console.log("Item not found in itemsList:", itemId);
+				return;
+			}
+
+			// Verkaufspreis (z. B. 50 % vom Kaufpreis)
+			const totalPrice = Math.floor(itemDef.price * quantity);
+
+			// 4️⃣ Items aus Inventar entfernen
+			await removeItemFromInventory(player.inventory_id, itemId, quantity);
+
+			// 5️⃣ Geld hinzufügen
+			const result = await PlayerAddMoney(player.id, totalPrice);
+
+			if (!result.success) {
+				socket.emit("Show:Dialogbox", "Error while adding money.");
+				return;
+			}
+
+			// 6️⃣ Inventar erneut laden & an Client schicken
+			const updatedInventory = await loadInventoryByInventoryId(player.inventory_id);
+			socket.emit("inventory:update:items", updatedInventory);
+
+			// 7️⃣ Feedback
+			socket.emit("player:money:update", result.newBalance);
+			socket.emit("Play:Sound:Coin");
+			socket.emit("Show:Dialogbox", `Sold ${quantity}x ${itemDef.name} for ${totalPrice} coins.`);
+		});
+
 		// ------------------------------
 		// Resources Events
 		// ------------------------------
@@ -211,6 +295,15 @@ export function initGameServer(io) {
 			//	await RemoveWorldResourceById(world_resource_id);
 			socket.emit("world_resource:removed", world_resource_id);
 			socket.broadcast.emit("world_resource:removed", world_resource_id);
+		});
+
+		//NPCs
+
+		socket.on("inventory:open:request", (npcId) => {
+			const npcInventory = npcInventories.get(npcId);
+			if (!npcInventory) return;
+
+			socket.emit("inventory:open:true", npcInventory);
 		});
 
 		// Chat

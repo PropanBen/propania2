@@ -12,6 +12,19 @@ export function preloadAssets(scene) {
 		frameHeight: 32,
 	});
 
+	//NPCs
+
+	const merchantURL = new URL("../npcs/merchant.png", import.meta.url).href;
+	scene.load.spritesheet("merchant", merchantURL, {
+		frameWidth: 64,
+		frameHeight: 64,
+	});
+	const merchantcartURL = new URL("../npcs/merchantcart.png", import.meta.url).href;
+	scene.load.spritesheet("merchantcart", merchantcartURL, {
+		frameWidth: 500,
+		frameHeight: 400,
+	});
+
 	//Animals
 
 	// Sheep
@@ -113,4 +126,7 @@ export function preloadAssets(scene) {
 
 	const sheepbleatURL = new URL("../sounds/sheepbleat.mp3", import.meta.url).href;
 	scene.load.audio("sheepbleat", sheepbleatURL);
+
+	const coinURL = new URL("../sounds/coin.mp3", import.meta.url).href;
+	scene.load.audio("coin", coinURL);
 }

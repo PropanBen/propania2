@@ -32,6 +32,11 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 			health: playerInfo.currenthealth,
 		};
 
+		this.money = playerInfo.money;
+		this.exp = playerInfo.exp;
+		this.level = playerInfo.level;
+		this.health = playerInfo.currenthealth;
+
 		this.state = "idle";
 		this.lastDirection = "down";
 		this.isInAction = false;
@@ -76,6 +81,11 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 		}
 
 		this.createDialogBox();
+
+		// Scoket Events
+		socket.on("player:money:update", (newMoney) => {
+			this.money = newMoney; // 👈 setter!
+		});
 	}
 
 	// -------------------------------------------------------------
@@ -113,8 +123,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 	}
 	set money(v) {
 		this.stats.money = v;
-		this.scene.events.emit("playerMoneyChanged", v);
-		this.network.sendPlayerUpdate();
+		this.scene.game.events.emit("playerMoneyChanged", v);
+		//this.network.sendPlayerUpdate();
 	}
 
 	get exp() {
@@ -122,8 +132,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 	}
 	set exp(v) {
 		this.stats.exp = v;
-		this.scene.events.emit("playerExpChanged", v);
-		this.network.sendPlayerUpdate();
+		this.scene.game.events.emit("playerExpChanged", v);
 	}
 
 	get level() {
@@ -131,8 +140,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 	}
 	set level(v) {
 		this.stats.level = v;
-		this.scene.events.emit("playerLevelChanged", v);
-		this.network.sendPlayerUpdate();
+		this.scene.game.events.emit("playerLevelChanged", v);
 	}
 
 	get health() {
@@ -140,8 +148,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 	}
 	set health(v) {
 		this.stats.health = v;
-		this.scene.events.emit("playerHealthChanged", v);
-		this.network.sendPlayerUpdate();
+		this.scene.game.events.emit("playerHealthChanged", v);
 	}
 
 	// -------------------------------------------------------------

@@ -1,6 +1,5 @@
 import Functions from "../assets/utils/functions.js";
 import itemsList from "./itemslist.js";
-import defaultTextStyle from "../assets/utils/functions.js";
 
 export default class InventoryUI {
 	constructor(scene, inventory) {
@@ -8,7 +7,7 @@ export default class InventoryUI {
 		this.inventory = inventory;
 
 		this.iconScale = 1; // Icon-Größe anpassen
-		this.container = this.scene.add.container(window.innerWidth / 2 - 175, 150).setDepth(9999);
+		this.container = this.scene.add.container(window.innerWidth / 2 - 175, 400).setDepth(9999);
 
 		// Hintergrund und Rahmen
 		const bg = this.scene.add.rectangle(0, 0, 350, 400, 0xdeb887, 0.8).setOrigin(0);
@@ -114,14 +113,33 @@ export default class InventoryUI {
 					dropInput.setText(item.dropAmount.toString());
 				});
 
-			// Drop-Button
-			const dropBtn = this.scene.add
+			let dropBtn = this.scene.add
 				.text(285, y + 5, "Drop", { fontSize: "16px", color: "#ff0000" })
 				.setInteractive()
 				.on("pointerdown", () => {
-					this.inventory.dropItem(this.inventory.inventory_id, item, item.dropAmount);
-					this.scene.sound.play("drop");
+					if (this.inventory.type === "drop") {
+						this.inventory.dropItem(this.inventory.inventory_id, item, item.dropAmount);
+						this.scene.sound.play("drop");
+					}
 				});
+
+			if (this.inventory.type === "buy") {
+				dropBtn
+					.setText("Buy")
+					.removeAllListeners()
+					.on("pointerdown", () => {
+						this.inventory.buyItem(this.inventory.inventory_id, item.item_id, item.dropAmount);
+					});
+			}
+
+			if (this.inventory.type === "sell") {
+				dropBtn
+					.setText("Sell")
+					.removeAllListeners()
+					.on("pointerdown", () => {
+						this.inventory.sellItem(this.inventory.inventory_id, item.item_id, item.dropAmount);
+					});
+			}
 
 			this.itemList.add([icon, name, quantityText, minusArrow, dropInput, plusArrow, dropBtn]);
 			y += 40;
@@ -140,15 +158,54 @@ export default class InventoryUI {
 	// Inventar sichtbar / unsichtbar
 	toggle() {
 		if (this.container.visible) {
+			this.inventory.type = "drop";
 			this.container.setVisible(false);
 		} else {
-			this.refresh();
 			this.container.setVisible(true);
 		}
+		this.refresh();
 	}
 
 	hide() {
 		this.container.setVisible(false);
 		this.popup.setVisible(false);
+	}
+
+	setPosition(x, y, adjustPopup = true) {
+		this.x = x;
+		this.y = y;
+
+		if (this.container) {
+			this.container.x = x;
+			this.container.y = y;
+		}
+
+		if (adjustPopup && this.popup) {
+			this.popup.x = x + 300; // Beispiel: rechts neben Inventar
+			this.popup.y = y + 50; // leicht nach unten verschoben
+		}
+	}
+
+	destroy() {
+		// Alle Kinder des Haupt-Containers entfernen
+		if (this.container) {
+			this.container.removeAll(true);
+			this.container.destroy();
+			this.container = null;
+		}
+
+		// Popup zerstören
+		if (this.popup) {
+			this.popup.removeAll(true);
+			this.popup.destroy();
+			this.popup = null;
+		}
+
+		// Referenzen auf Inventar und Szene löschen
+		this.inventory = null;
+		this.scene = null;
+		this.itemList = null;
+		this.popupText = null;
+		this.popupPriceText = null;
 	}
 }

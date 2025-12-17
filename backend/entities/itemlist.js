@@ -12,6 +12,8 @@ const itemsList = [
 	{ item_id: "3", key: "stone", name: "Stone", description: "Hard as a Rock", frame: 11, price: 5 },
 	{ item_id: "8", key: "meat", name: "meat", description: "Well done or Rare you should compare", frame: 31, price: 5 },
 	{ item_id: "9", key: "wool", name: "Wool", description: "Soft and fluffy", frame: 32, price: 5 },
+	{ item_id: "20", key: "pickaxe", name: "Pickaxe", description: "To gather stones from rocks", frame: 20, price: 100 },
+	{ item_id: "21", key: "axe", name: "Axe", description: "To gather wood from trees", frame: 21, price: 100 },
 ];
 
 export default itemsList;

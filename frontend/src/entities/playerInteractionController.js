@@ -1,6 +1,7 @@
 import Item from "./items.js";
 import Resource from "./resources.js";
 import Animal from "./animal.js";
+import NPC from "./npc.js";
 import { socket } from "../socket.js";
 
 export default class PlayerInteractionController {
@@ -37,6 +38,7 @@ export default class PlayerInteractionController {
 		// Interactables existieren evtl. noch nicht
 		this.interactables = this.scene.interactablesGroup || this.scene.physics.add.group();
 		this.animals = this.scene.animalGroup;
+		this.npcs = this.scene.npcGroup;
 
 		// Collision detection via physics
 		if (this.actionzone && this.interactables) {
@@ -47,6 +49,12 @@ export default class PlayerInteractionController {
 
 		if (this.actionzone && this.animals) {
 			this.scene.physics.add.overlap(this.actionzone, this.animals, (zone, object) => {
+				this.actionTarget = object;
+			});
+		}
+
+		if (this.actionzone && this.npcs) {
+			this.scene.physics.add.overlap(this.actionzone, this.npcs, (zone, object) => {
 				this.actionTarget = object;
 			});
 		}
@@ -114,6 +122,10 @@ export default class PlayerInteractionController {
 	performAction(type) {
 		// wenn bereits in Aktion, nichts tun
 		if (this.player.state === "action") return;
+
+		if (type === "interact" && this.actionTarget instanceof NPC) {
+			socket.emit("inventory:open:request", this.actionTarget.id);
+		}
 
 		if (type === "attack") {
 			const direction = this.player.lastDirection;

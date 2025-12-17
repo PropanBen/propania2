@@ -42,6 +42,13 @@ export default class Inventory {
 		socket.emit("inventory:item:drop", inventory_id, item, quantity);
 	}
 
+	buyItem(inventory_id, item, quantity = 1) {
+		socket.emit("inventory:item:buy", inventory_id, item, quantity);
+	}
+	sellItem(inventory_id, item, quantity = 1) {
+		socket.emit("inventory:item:sell", inventory_id, item, quantity);
+	}
+
 	hasItem(item, quantity = 1) {
 		return this.items[item.item_id] && this.items[item.item_id].quantity >= quantity;
 	}

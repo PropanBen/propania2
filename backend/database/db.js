@@ -89,6 +89,47 @@ export async function updatePlayer(playerData) {
 	);
 }
 
+export async function PlayerRemoveMoney(playerId, amount) {
+	if (!playerId || typeof amount !== "number" || amount <= 0) {
+		throw new Error("Ungültige Parameter");
+	}
+
+	const rows = await query("SELECT money FROM players WHERE id = ?", [playerId]);
+	if (rows.length === 0) throw new Error("Spieler nicht gefunden");
+
+	const currentMoney = Number(rows[0].money);
+
+	if (currentMoney < amount) {
+		return { success: false, newBalance: currentMoney };
+	}
+
+	const newMoney = currentMoney - amount;
+	await query("UPDATE players SET money = ? WHERE id = ?", [newMoney, playerId]);
+
+	return { success: true, newBalance: newMoney };
+}
+
+export async function PlayerAddMoney(playerId, amount) {
+	if (!playerId || typeof amount !== "number" || amount <= 0) {
+		throw new Error("Ungültige Parameter für addPlayerMoney");
+	}
+
+	// Spieler aus DB laden
+	const rows = await query("SELECT money FROM players WHERE id = ?", [playerId]);
+
+	if (rows.length === 0) {
+		throw new Error("Spieler nicht gefunden");
+	}
+
+	const currentMoney = Number(rows[0].money);
+	const newMoney = currentMoney + amount;
+
+	// Geld hinzufügen
+	await query("UPDATE players SET money = ? WHERE id = ?", [newMoney, playerId]);
+
+	return { success: true, newBalance: newMoney };
+}
+
 // --------- Items & Inventare ----------
 
 // Load World Items

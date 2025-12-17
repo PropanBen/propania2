@@ -1,13 +1,13 @@
 import { socket } from "../socket.js";
 import Functions from "../assets/utils/functions.js";
 import InventoryUI from "../entities/inventoryUI.js";
+import Inventory from "../entities/inventory.js";
 
 export default class UIScene extends Phaser.Scene {
 	constructor() {
 		super("UIScene");
 		this.joystickActive = false;
 		this.joystickVector = { x: 0, y: 0 };
-		this.inventoryUI = null;
 		this.player = null;
 
 		//Chat
@@ -15,6 +15,8 @@ export default class UIScene extends Phaser.Scene {
 	}
 
 	create() {
+		this.inventoryUI = null;
+		this.otherinventoryUI = null;
 		this.socket = socket;
 		this.gameScene = this.scene.get("GameScene");
 		this.chatMessages = [];
@@ -91,6 +93,27 @@ export default class UIScene extends Phaser.Scene {
 			const player = this.gameScene.players[socket.id];
 			if (player) player.showDialog(`${playerName}: ${message}`, 4000);
 		});
+
+		socket.on("inventory:open:true", (npcInventory) => {
+			this.otherinventoryUI = null;
+			const npcinventory = new Inventory(npcInventory.id, "buy");
+			npcinventory.items = npcInventory.items;
+			this.otherinventoryUI = new InventoryUI(this, npcinventory);
+
+			this.inventoryUI.setPosition(100, 200);
+			this.otherinventoryUI.setPosition(+500, 200);
+			this.inventoryUI.inventory.type = "sell";
+			this.toggleInventoryUI();
+			this.otherinventoryUI.refresh();
+			this.otherinventoryUI.container.setVisible(true);
+		});
+
+		socket.on("inventory:other:refresh", (npcInventory) => {
+			if (this.otherinventoryUI) {
+				this.otherinventoryUI.inventory.items = npcInventory.items;
+				this.otherinventoryUI.refresh();
+			}
+		});
 	}
 
 	// =================================================
@@ -98,6 +121,11 @@ export default class UIScene extends Phaser.Scene {
 	// =================================================
 	toggleInventoryUI() {
 		if (!this.inventoryUI) return;
+
+		if (!this.otherinventoryUI) {
+			this.inventoryUI.inventory.type = "drop";
+		}
+
 		this.inventoryUI.toggle();
 	}
 
