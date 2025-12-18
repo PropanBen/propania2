@@ -2,56 +2,55 @@ import { socket } from "../socket.js";
 import Functions from "../assets/utils/functions.js";
 import InventoryUI from "../entities/inventoryUI.js";
 import Inventory from "../entities/inventory.js";
+import API_BASE from "../config/api.js";
 
 export default class UIScene extends Phaser.Scene {
-	constructor() {
+	constructor(data) {
 		super("UIScene");
+		this.onLogout = data.onLogout;
 		this.joystickActive = false;
 		this.joystickVector = { x: 0, y: 0 };
 		this.player = null;
-
-		//Chat
 		this.chatContainer = null;
+		this.inventoryUI = null;
+		this.otherinventoryUI = null;
 	}
 
 	create() {
-		this.inventoryUI = null;
-		this.otherinventoryUI = null;
 		this.socket = socket;
 		this.gameScene = this.scene.get("GameScene");
 		this.chatMessages = [];
 		this.createChatUI();
 
 		// ------------------------------
-		// UI Elemente
+		// UI Elemente (Stats & Buttons)
 		// ------------------------------
 		const healthbtn = this.add.sprite(30, 50, "hp").setScale(4);
 		const xpbtn = this.add.sprite(30, 120, "xp").setScale(4);
 		const moneybtn = this.add.sprite(30, 190, "money").setScale(4);
 		const lvlbtn = this.add.sprite(30, 260, "lvl").setScale(4);
 
-		const ebtn = this.add.sprite(window.innerWidth - 150, window.innerHeight - 100, "e").setScale(4);
-		const fbtn = this.add.sprite(window.innerWidth - 150, window.innerHeight - 200, "f").setScale(4);
-		const qbtn = this.add.sprite(window.innerWidth - 50, window.innerHeight - 200, "q").setScale(4);
-		const plusbtn = this.add.sprite(220, window.innerHeight - 230, "plus").setScale(4);
-		const minusbtn = this.add.sprite(220, window.innerHeight - 80, "minus").setScale(4);
-		const cambtn = this.add.sprite(100, window.innerHeight - 290, "cam").setScale(4);
-		const inventorybtn = this.add.sprite(window.innerWidth - 50, window.innerHeight - 100, "inventory").setScale(4);
+		const ebtn = this.add.sprite(window.innerWidth - 180, window.innerHeight - 80, "e").setScale(6);
+		const fbtn = this.add.sprite(window.innerWidth - 180, window.innerHeight - 230, "f").setScale(6);
+		const qbtn = this.add.sprite(window.innerWidth - 50, window.innerHeight - 230, "q").setScale(6);
+		const plusbtn = this.add.sprite(350, window.innerHeight - 350, "plus").setScale(6);
+		const minusbtn = this.add.sprite(350, window.innerHeight - 50, "minus").setScale(6);
+		const cambtn = this.add.sprite(50, window.innerHeight - 350, "cam").setScale(6);
+		const inventorybtn = this.add.sprite(window.innerWidth - 50, window.innerHeight - 80, "inventory").setScale(6);
+		const logoutbtn = this.add.sprite(window.innerWidth - 50, 50, "logout").setScale(6);
 
-		this.healthText = this.add.text(60, 20, "", Functions.defaultTextStyle);
-		this.xpText = this.add.text(60, 70, "0", Functions.defaultTextStyle);
-		this.moneyText = this.add.text(60, 120, "0", Functions.defaultTextStyle);
-		this.lvlText = this.add.text(60, 170, "1", Functions.defaultTextStyle);
+		this.healthText = this.add.text(80, 40, "", Functions.defaultTextStyle);
+		this.xpText = this.add.text(80, 110, "0", Functions.defaultTextStyle);
+		this.moneyText = this.add.text(80, 180, "0", Functions.defaultTextStyle);
+		this.lvlText = this.add.text(80, 250, "1", Functions.defaultTextStyle);
 
-		[ebtn, fbtn, qbtn, plusbtn, minusbtn, cambtn, inventorybtn].forEach((btn) => btn.setInteractive({ useHandCursor: true }));
+		[ebtn, fbtn, qbtn, plusbtn, minusbtn, cambtn, inventorybtn, logoutbtn].forEach((btn) => btn.setInteractive({ useHandCursor: true }));
 
 		// ------------------------------
-		// InventoryUI
+		// Spieler-Inventar UI erstellen (einmal)
 		// ------------------------------
 		this.inventoryUI = new InventoryUI(this, null);
 		inventorybtn.on("pointerdown", () => this.toggleInventoryUI());
-		//this.input.keyboard.on("keydown-I", () => this.toggleInventoryUI());
-		//this.input.keyboard.on("keydown-T", () => this.toggleChat());
 
 		// ------------------------------
 		// Player ready
@@ -69,7 +68,7 @@ export default class UIScene extends Phaser.Scene {
 		});
 
 		// ------------------------------
-		// Stats Events
+		// Player stats events
 		// ------------------------------
 		this.game.events.on("playerHealthChanged", (h) => this.healthText.setText(`${h}/100`));
 		this.game.events.on("playerMoneyChanged", (m) => this.moneyText.setText(`${m}`));
@@ -83,35 +82,65 @@ export default class UIScene extends Phaser.Scene {
 		// ------------------------------
 		this.createJoystick();
 
-		// Socket Event
+		// ------------------------------
+		// Socket Events
+		// ------------------------------
 		socket.on("chat:message", ({ playerName, message }) => {
 			this.chatMessages.push(`${playerName}: ${message}`);
 			if (this.chatMessages.length > 10) this.chatMessages.shift();
 			this.chatText.setText(this.chatMessages.join("\n"));
 
-			// Optional: Zeige die Nachricht auch über Spieler Dialogbox
 			const player = this.gameScene.players[socket.id];
 			if (player) player.showDialog(`${playerName}: ${message}`, 4000);
 		});
 
-		socket.on("inventory:open:true", (npcInventory) => {
-			this.otherinventoryUI = null;
-			const npcinventory = new Inventory(npcInventory.id, "buy");
-			npcinventory.items = npcInventory.items;
-			this.otherinventoryUI = new InventoryUI(this, npcinventory);
+		// NPC-Inventar öffnen
+		socket.on("inventory:open:true", (npcInventoryData) => {
+			const npcInventory = new Inventory(npcInventoryData.id, "buy");
+			npcInventory.items = npcInventoryData.items;
 
-			this.inventoryUI.setPosition(100, 200);
-			this.otherinventoryUI.setPosition(+500, 200);
+			const invWidth = window.innerWidth * 0.35;
+			const invHeight = window.innerHeight * 0.8;
+			const spacing = 20;
+			const startX = (window.innerWidth - (invWidth * 2 + spacing)) / 2;
+			const startY = (window.innerHeight - invHeight) / 2;
+
+			// Spieler-Inventar links
+			this.inventoryUI.setPosition(startX, startY);
 			this.inventoryUI.inventory.type = "sell";
-			this.toggleInventoryUI();
-			this.otherinventoryUI.refresh();
+			this.inventoryUI.container.setVisible(true);
+			this.inventoryUI.refresh();
+
+			// NPC-Inventar rechts
+			if (this.otherinventoryUI) this.otherinventoryUI.destroy();
+			this.otherinventoryUI = new InventoryUI(this, npcInventory);
+			this.otherinventoryUI.setPosition(this.inventoryUI.container.x, this.inventoryUI.container.y);
 			this.otherinventoryUI.container.setVisible(true);
+			this.otherinventoryUI.refresh();
 		});
 
-		socket.on("inventory:other:refresh", (npcInventory) => {
+		// NPC-Inventar aktualisieren
+		socket.on("inventory:other:refresh", (npcInventoryData) => {
 			if (this.otherinventoryUI) {
-				this.otherinventoryUI.inventory.items = npcInventory.items;
+				this.otherinventoryUI.inventory.items = npcInventoryData.items;
 				this.otherinventoryUI.refresh();
+			}
+		});
+
+		// Logout Button
+		logoutbtn.on("pointerdown", async () => {
+			try {
+				const API_BASE = import.meta.env.PROD
+					? `${import.meta.env.VITE_API_PROTOKOLL}://${import.meta.env.VITE_API_URL}`
+					: `${import.meta.env.VITE_API_PROTOKOLL}://${import.meta.env.VITE_HOST_SERVER}:${import.meta.env.VITE_API_PORT}`;
+
+				await fetch(`${API_BASE}/api/auth/logout`, { method: "POST", credentials: "include" });
+			} catch (err) {
+				console.error("Logout failed:", err);
+			} finally {
+				if (this.scene.isActive("UIScene")) this.scene.stop("UIScene");
+				if (this.scene.isActive("GameScene")) this.scene.stop("GameScene");
+				if (this.onLogout) this.onLogout();
 			}
 		});
 	}
@@ -121,21 +150,20 @@ export default class UIScene extends Phaser.Scene {
 	// =================================================
 	toggleInventoryUI() {
 		if (!this.inventoryUI) return;
-
-		if (!this.otherinventoryUI) {
-			this.inventoryUI.inventory.type = "drop";
-		}
-
 		this.inventoryUI.toggle();
+		// NPC nur sichtbar, wenn Spieler-Inventar sichtbar
+		if (this.otherinventoryUI) {
+			this.otherinventoryUI.container.setVisible(this.inventoryUI.container.visible && this.otherinventoryUI.container.visible);
+		}
 	}
 
 	// =================================================
 	// JOYSTICK
 	// =================================================
 	createJoystick() {
-		const radius = 80;
-		const innerRadius = 40;
-		const cx = 100;
+		const radius = 160;
+		const innerRadius = 80;
+		const cx = 150;
 		const cy = window.innerHeight - 150;
 
 		this.joyBG = this.add.graphics();
@@ -163,11 +191,10 @@ export default class UIScene extends Phaser.Scene {
 
 		this.input.on("pointermove", (p) => {
 			if (!this.joystickActive) return;
-
 			const dx = p.x - cx;
 			const dy = p.y - cy;
 			const dist = Math.sqrt(dx * dx + dy * dy);
-			const max = 60;
+			const max = 120;
 			const clamped = Math.min(max, dist);
 			const angle = Math.atan2(dy, dx);
 
@@ -185,13 +212,16 @@ export default class UIScene extends Phaser.Scene {
 	updateStickGraphics(x, y) {
 		this.joyStick.clear();
 		this.joyStick.fillStyle(0xffffff, 0.6);
-		this.joyStick.fillCircle(x, y, 40);
+		this.joyStick.fillCircle(x, y, 80);
 	}
 
 	getJoystickVector() {
 		return this.joystickVector;
 	}
 
+	// =================================================
+	// CHAT
+	// =================================================
 	createChatUI() {
 		const width = 300;
 		const height = 200;
@@ -199,15 +229,12 @@ export default class UIScene extends Phaser.Scene {
 		this.chatContainer = this.add.container(10, window.innerHeight - 600).setDepth(1200);
 		this.chatContainer.setVisible(false);
 
-		// Hintergrund
 		const bg = this.add.rectangle(0, 0, width, height, 0x000000, 0.5).setOrigin(0, 0);
 		this.chatContainer.add(bg);
 
-		// Chat Text
 		this.chatText = this.add.text(5, 5, "", { fontSize: "14px", color: "#fff", wordWrap: { width: width - 10 } });
 		this.chatContainer.add(this.chatText);
 
-		// Eingabefeld (HTML Input Overlay)
 		this.chatInput = document.createElement("input");
 		this.chatInput.type = "text";
 		this.chatInput.style.position = "absolute";
@@ -232,8 +259,6 @@ export default class UIScene extends Phaser.Scene {
 	toggleChat() {
 		if (!this.chatContainer) return;
 		this.chatContainer.setVisible(!this.chatContainer.visible);
-
-		// Optional auch das Input-Feld ein-/ausblenden
 		if (this.chatInput) this.chatInput.style.display = this.chatContainer.visible ? "block" : "none";
 	}
 }

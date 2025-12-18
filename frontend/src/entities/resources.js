@@ -17,15 +17,16 @@ export default class Resource extends Phaser.Physics.Arcade.Sprite {
 		scene.add.existing(this);
 		scene.physics.add.existing(this, true); // static body
 		this.setDepth(11);
+		this.setScale(0.5);
 		this.hitcounter = 3;
 
 		if (resource.key === "tree") {
-			this.body.setSize(40, 20);
-			this.body.setOffset((this.width - 40) / 2, this.height - 20);
+			this.body.setSize(20, 20);
+			this.body.setOffset((this.width - 20) / 2, this.height - 20);
 		} else if (resource.key === "rock") {
-			this.setScale(2, 2);
-			this.body.setSize(64, 20);
-			this.body.setOffset(-16, 5);
+			this.setScale(1, 1);
+			this.body.setSize(32, 20);
+			this.body.setOffset(0, 5);
 		}
 	}
 

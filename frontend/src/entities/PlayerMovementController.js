@@ -6,8 +6,8 @@ export default class PlayerMovementController {
 		this.player = player;
 
 		// Geschwindigkeiten
-		this.walkSpeed = 200;
-		this.runSpeed = 350;
+		this.walkSpeed = 100;
+		this.runSpeed = 200;
 
 		// Nur lokaler Spieler bekommt Input
 		if (this.player.isLocal()) {

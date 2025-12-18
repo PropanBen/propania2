@@ -7,18 +7,20 @@ import UIScene from "./scenes/uiscene.js";
 
 let phaserGame = null;
 
-export const startGame = (account_id) => {
-	// existierendes Game zerstören, bevor ein neues gestartet wird
+export const startGame = (account_id, onLogout) => {
 	if (phaserGame) {
 		phaserGame.destroy(true);
 		phaserGame = null;
 	}
 
-	// Phaser ins #game-container mounten
 	const configWithData = {
 		...gameConfig,
-		parent: "game-container", // <--- wichtig!
-		scene: [new PlayerSelectScene({ account_id }), new GameScene({ account_id }), new UIScene({ account_id })],
+		parent: "game-container",
+		scene: [
+			new PlayerSelectScene({ account_id, onLogout }),
+			new GameScene({ account_id }),
+			new UIScene({ account_id, onLogout }), // <-- hier weitergeben
+		],
 	};
 
 	phaserGame = new Phaser.Game(configWithData);

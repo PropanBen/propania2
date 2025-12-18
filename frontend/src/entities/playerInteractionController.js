@@ -11,10 +11,10 @@ export default class PlayerInteractionController {
 		this._actionTarget = null;
 
 		this.offsets = {
-			up: { x: 0, y: +16 },
-			down: { x: 0, y: 80 },
-			left: { x: -32, y: 48 },
-			right: { x: 32, y: 48 },
+			up: { x: 0, y: 0 },
+			down: { x: 0, y: 48 },
+			left: { x: -32, y: 16 },
+			right: { x: 32, y: 16 },
 		};
 
 		this.actionzoneOffset = { ...this.offsets[player.lastDirection] };
@@ -24,8 +24,8 @@ export default class PlayerInteractionController {
 			this.actionzone = this.scene.add.rectangle(
 				this.player.x + this.actionzoneOffset.x,
 				this.player.y + this.actionzoneOffset.y,
-				48,
-				48,
+				32,
+				32,
 				0xffffff,
 				0
 			);
@@ -181,7 +181,6 @@ export default class PlayerInteractionController {
 
 				// Jetzt das Item droppen
 				this.player.inventory.dropItem(this.player.inventory.inventory_id, dropItem, 1);
-				this.scene.sound.play("drop");
 			});
 
 			return;

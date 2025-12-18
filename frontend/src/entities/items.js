@@ -25,21 +25,13 @@ export default class Item extends Phaser.Physics.Arcade.Sprite {
 
 		scene.add.existing(this);
 		scene.physics.add.existing(this, true);
-		this.body.setSize(32, 32);
+		this.body.setSize(16, 16);
 		this.setDepth(11);
-		this.setScale(2);
+		this.setScale(0.5);
 
-		this.normalizeSize(32, 32);
-
-		// Optional: kleines Label
-		/*
-		this.nameText = scene.add
-			.text(this.x, this.y - 18, this.name, { fontSize: '12px', color: '#fff' })
+		this.quantityText = scene.add
+			.text(this.x + 15, this.y + 5, this.quantity + "x", { fontSize: "10px", fontStyle: "bold", color: "#000000ff", resolution: 4 })
 			.setOrigin(0.5);
-		this.nameText.setDepth(1000);
-		*/
-
-		this.quantityText = scene.add.text(this.x + 12, this.y + 15, this.quantity + "x", { fontSize: "12px", color: "#fff" }).setOrigin(0.5);
 		this.quantityText.setDepth(1000);
 	}
 

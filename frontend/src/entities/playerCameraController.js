@@ -118,11 +118,11 @@ export default class PlayerCameraController {
 	// Zoom Funktionen
 	// -------------------------------------------------------------
 	zoomIn() {
-		this.camera.zoom = Phaser.Math.Clamp(this.camera.zoom + 0.1, 0.5, 3);
+		this.camera.zoom = Phaser.Math.Clamp(this.camera.zoom + 0.1, 0.1, 3);
 	}
 
 	zoomOut() {
-		this.camera.zoom = Phaser.Math.Clamp(this.camera.zoom - 0.1, 0.5, 3);
+		this.camera.zoom = Phaser.Math.Clamp(this.camera.zoom - 0.1, 0.1, 3);
 	}
 
 	// -------------------------------------------------------------

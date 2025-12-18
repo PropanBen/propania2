@@ -11,7 +11,7 @@ function App() {
 	const checkAuth = async () => {
 		try {
 			const res = await fetch(`${API_BASE}/api/auth/me`, {
-				credentials: "include", // Cookie wird automatisch gesendet
+				credentials: "include",
 			});
 			if (res.ok) {
 				const data = await res.json();
@@ -31,37 +31,23 @@ function App() {
 	useEffect(() => {
 		checkAuth();
 		if (account) {
-			startGame(account_id);
+			startGame(account_id, () => {
+				// Callback bei Logout
+				setAccount(null);
+				setAccount_id(null);
+				destroyGame();
+			});
 		}
-		// Cleanup optional: Game zerstören beim Unmount
 		return () => {
 			destroyGame();
 		};
 	}, [account]);
 
-	const handleLogout = async () => {
-		try {
-			await fetch(`${API_BASE}/api/auth/logout`, {
-				method: "POST",
-				credentials: "include",
-			});
-		} catch (err) {
-			console.error("Logout failed:", err);
-		} finally {
-			setAccount(null);
-			setAccount_id(null);
-			destroyGame();
-		}
-	};
-
-	if (!account) {
-		return <Login onLogin={setAccount} />;
-	}
+	if (!account) return <Login onLogin={setAccount} />;
 
 	return (
 		<div>
-			<button onClick={handleLogout}>Logout</button>
-			<div id="game-container" style={{ width: "100vw", height: "100vh", visibility: "visible" }}></div>
+			<div id="game-container" style={{ width: "100vw", height: "100vh" }}></div>
 		</div>
 	);
 }

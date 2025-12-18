@@ -159,6 +159,7 @@ export function initGameServer(io) {
 
 			const updatedInventory = await loadInventoryByInventoryId(inventory_id);
 			socket.emit("inventory:update:items", updatedInventory);
+			socket.emit("Play:Sound:Drop");
 		});
 
 		// ------------------------------

@@ -20,9 +20,11 @@ export default class NPC extends Phaser.Physics.Arcade.Sprite {
 		this.body.setImmovable(true);
 
 		this.nameText = scene.add
-			.text(this.x, this.y - 60, this.name, {
-				fontSize: "14px",
-				color: "#ffffff",
+			.text(this.x, this.y - 32, this.name, {
+				fontSize: "10px",
+				fontStyle: "bold",
+				color: "#000000ff",
+				resolution: 4,
 			})
 			.setOrigin(0.5)
 			.setDepth(1001);

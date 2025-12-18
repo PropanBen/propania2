@@ -66,4 +66,53 @@ router.get("/players", async (req, res) => {
 	}
 });
 
+router.post("/players/register", async (req, res) => {
+	const token = req.cookies.token;
+	if (!token) return res.status(401).send("Nicht eingeloggt");
+
+	const { name } = req.body;
+	if (!name || typeof name !== "string" || name.length > 20) return res.status(400).send("Ungültiger Spielername");
+
+	// Nur Buchstaben und Leerzeichen erlauben
+	if (!/^[A-Za-z\s]{1,20}$/.test(name)) {
+		return res.status(400).send("Spielername darf nur Buchstaben und Leerzeichen enthalten, max. 20 Zeichen.");
+	}
+
+	let conn;
+	try {
+		const payload = jwt.verify(token, process.env.JWT_SECRET);
+		const accountId = payload.id;
+
+		conn = await pool.getConnection();
+
+		// Prüfen, wie viele Spieler der Account bereits hat
+		const existingPlayers = await conn.query("SELECT COUNT(*) AS count FROM players WHERE account_id = ?", [accountId]);
+
+		const count = Number(existingPlayers[0].count);
+		if (count >= 3) {
+			return res.status(400).send("Maximal 3 Spieler pro Account erlaubt");
+		}
+
+		// SQL Injection vermeiden, Parameterized Query
+		const result = await conn.query(
+			"INSERT INTO players (account_id, name, money, exp, level, currenthealth, positionX, positionY) VALUES (?, ?, 0, 0, 1, 100, 0, 0)",
+			[accountId, name]
+		);
+
+		// BigInt (insertId) in String konvertieren, falls nötig
+		const playerId = result.insertId.toString();
+
+		res.status(201).json({ id: playerId, name });
+	} catch (err) {
+		console.error(err);
+		res.status(500).send("Serverfehler");
+	} finally {
+		if (conn) conn.release();
+	}
+});
+
+function convertBigIntToString(obj) {
+	return JSON.parse(JSON.stringify(obj, (_, value) => (typeof value === "bigint" ? value.toString() : value)));
+}
+
 export default router;

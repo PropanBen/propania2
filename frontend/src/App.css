@@ -5,6 +5,10 @@
 	font-style: normal;
 }
 
+input {
+	font-family: "Arial" !important;
+}
+
 * {
 	font-family: "PerryGothic", sans-serif;
 }

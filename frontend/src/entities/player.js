@@ -46,19 +46,24 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 		// ------------------------------
 		scene.add.existing(this);
 		scene.physics.add.existing(this);
+		this.body.setCollideWorldBounds(true);
+		this.setCollideWorldBounds(true);
+		this.body.onWorldBounds = true;
 
 		this.body.setSize(16, 16);
 		this.body.setOffset(24, 48);
 		this.setDepth(1000);
-		this.setScale(2);
+		this.setScale(1);
 
 		// ------------------------------
 		// NameTag
 		// ------------------------------
 		this.nameText = scene.add
-			.text(this.x, this.y - 40, this.name, {
-				fontSize: "14px",
-				color: "#fff",
+			.text(this.x, this.y - 30, this.name, {
+				fontSize: "10px",
+				fontStyle: "bold",
+				color: "#000000ff",
+				resolution: 4,
 			})
 			.setOrigin(0.5)
 			.setDepth(1000);
@@ -101,7 +106,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 		if (this.network) this.network.update();
 
 		// NameTag immer mitziehen
-		if (this.nameText) this.nameText.setPosition(this.x, this.y - 40);
+		if (this.nameText) this.nameText.setPosition(this.x, this.y - 30);
 
 		if (this.dialogContainer) {
 			this.dialogContainer.setPosition(this.x, this.y - 60);

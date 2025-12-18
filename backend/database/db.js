@@ -12,6 +12,7 @@ export const pool = mariadb.createPool({
 	password: process.env.DB_PASSWORD,
 	database: process.env.DB_NAME,
 	connectionLimit: 5,
+	bigNumberStrings: true,
 });
 
 // --------- Hilfsfunktionen ----------
@@ -214,20 +215,6 @@ export async function getOrCreateInventory(conn, ownerType, ownerId) {
 
 	return Number(res.insertId);
 }
-
-/*
-export async function loadInventory(ownerId) {
-	// 1️⃣ DB-Abfrage nur nach item_id und quantity
-	const rows = await query(
-		`SELECT ii.item_id, SUM(ii.quantity) AS quantity
-         FROM inventory_items ii
-         JOIN inventories inv ON inv.id = ii.inventory_id
-         WHERE inv.owner_id = ?
-         GROUP BY ii.item_id
-         ORDER BY ii.item_id ASC`,
-		[ownerId]
-	);
-	*/
 
 export async function loadInventoryByInventoryId(inventory_id) {
 	const rows = await query(

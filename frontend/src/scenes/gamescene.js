@@ -43,11 +43,25 @@ export default class GameScene extends Phaser.Scene {
 		// Tilemap und Layer
 
 		const map = this.make.tilemap({ key: "map" });
-		const groundTiles = map.addTilesetImage("Ground", "ground");
-		const groundLayer = map.createLayer("Ground", groundTiles, 0, 0);
+		const groundTiles = map.addTilesetImage("tileset_ground", "ground");
+
+		const groundLayer = map.createLayer("ground", groundTiles, 0, 0);
 		groundLayer.setDepth(0);
-		groundLayer.setScale(4);
+		//	groundLayer.setRoundPixels(true);
 		this.groundLayer = groundLayer;
+
+		const mapWidth = map.widthInPixels;
+		const mapHeight = map.heightInPixels;
+
+		// Map zentrieren → (0|0) = Mitte
+		groundLayer.setPosition(Math.floor(-mapWidth / 2), Math.floor(-mapHeight / 2));
+
+		// World Bounds (NUR EINMAL!)
+		this.physics.world.setBounds(-mapWidth / 2, -mapHeight / 2, mapWidth, mapHeight, true, true, true, true);
+
+		// Camera Bounds (wichtig!)
+		this.cameras.main.setBounds(-mapWidth / 2, -mapHeight / 2, mapWidth, mapHeight);
+		this.cameras.main.roundPixels = true;
 
 		// Input keys
 		this.keyE = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
@@ -58,9 +72,10 @@ export default class GameScene extends Phaser.Scene {
 
 		this.interactText = this.add
 			.text(0, 0, "[E] Pick up", {
-				fontSize: "14px",
+				fontSize: "10px",
 				fontStyle: "bold",
-				color: "#ffffffff",
+				color: "#000000ff",
+				resolution: 4,
 				padding: { x: 6, y: 2 },
 			})
 			.setOrigin(0.5)
@@ -74,7 +89,7 @@ export default class GameScene extends Phaser.Scene {
 		//NPCs
 
 		this.merchant = new NPC(this, 0, 1000, "merchant", "Merchant", "trader", "start_merchant");
-		this.merchant.setScale(1.7);
+		this.merchant.setScale(0.8);
 
 		this.merchantcart = new WorldObject(this, 200, 1000, "merchantcart", "cart");
 
@@ -195,6 +210,9 @@ export default class GameScene extends Phaser.Scene {
 		//Sounds
 		socket.on("Play:Sound:Coin", () => {
 			this.sound.play("coin");
+		});
+		socket.on("Play:Sound:Drop", () => {
+			this.sound.play("drop");
 		});
 
 		// ------------------------------

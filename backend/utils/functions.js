@@ -11,18 +11,18 @@ export default class Functions {
 		const offset = { x: 0, y: 0 };
 		switch (lastDirection) {
 			case "up":
-				offset.y = -10;
+				offset.y = 0;
 				break;
 			case "down":
-				offset.y = 80;
+				offset.y = 48;
 				break;
 			case "left":
-				offset.x = -30;
-				offset.y = 50;
+				offset.x = -32;
+				offset.y = 16;
 				break;
 			case "right":
-				offset.x = 30;
-				offset.y = 50;
+				offset.x = 32;
+				offset.y = 16;
 				break;
 		}
 		return { x: x + offset.x, y: y + offset.y };

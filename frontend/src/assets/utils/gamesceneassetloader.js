@@ -36,10 +36,19 @@ export function preloadAssets(scene) {
 
 	// Map
 
+	/*
 	const mapUrl = new URL("../map/maps/map.json", import.meta.url).href;
 	scene.load.tilemapTiledJSON("map", mapUrl);
 
 	const groundUrl = new URL("../map/images/Ground.png", import.meta.url).href;
+	scene.load.image("ground", groundUrl);
+
+	*/
+
+	const mapUrl = new URL("../map/maps/map.json", import.meta.url).href;
+	scene.load.tilemapTiledJSON("map", mapUrl);
+
+	const groundUrl = new URL("../map/images/tileset_ground.png", import.meta.url).href;
 	scene.load.image("ground", groundUrl);
 
 	// Items
@@ -89,14 +98,23 @@ export function preloadAssets(scene) {
 	const plusURL = new URL("../ui/plus.png", import.meta.url).href;
 	scene.load.image("plus", plusURL);
 
+	const plusgreenURL = new URL("../ui/plus_green.png", import.meta.url).href;
+	scene.load.image("plus_green", plusgreenURL);
+
 	const minusURL = new URL("../ui/minus.png", import.meta.url).href;
 	scene.load.image("minus", minusURL);
+
+	const minusredURL = new URL("../ui/minus_red.png", import.meta.url).href;
+	scene.load.image("minus_red", minusredURL);
 
 	const camURL = new URL("../ui/cam.png", import.meta.url).href;
 	scene.load.image("cam", camURL);
 
 	const inventoryURL = new URL("../ui/inventory.png", import.meta.url).href;
 	scene.load.image("inventory", inventoryURL);
+
+	const logoutURL = new URL("../ui/logout.png", import.meta.url).href;
+	scene.load.image("logout", logoutURL);
 
 	// Sounds
 

@@ -24,7 +24,7 @@ export default class Animal extends Phaser.Physics.Arcade.Sprite {
 		this.body.setOffset(3.5, 3.5);
 		this.body.allowGravity = false;
 
-		this.setScale(2);
+		this.setScale(1);
 		this.setDepth(1000);
 
 		this.animation = new AnimalAnimationController(scene, this);

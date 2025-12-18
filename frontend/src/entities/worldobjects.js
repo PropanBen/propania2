@@ -10,7 +10,7 @@ export default class WorldObject extends Phaser.Physics.Arcade.Sprite {
 		scene.physics.add.existing(this, true);
 		this.scene.worldobjectsGroup.add(this);
 
-		this.setScale(0.5);
+		this.setScale(0.4);
 		this.setDepth(10);
 
 		this.body.setSize(230, 80);
