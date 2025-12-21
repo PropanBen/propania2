@@ -12,7 +12,6 @@ export default class UIScene extends Phaser.Scene {
 		this.joystickVector = { x: 0, y: 0 };
 		this.player = null;
 		this.chatContainer = null;
-		this.inventoryUI = null;
 		this.otherinventoryUI = null;
 	}
 
@@ -49,7 +48,6 @@ export default class UIScene extends Phaser.Scene {
 		// ------------------------------
 		// Spieler-Inventar UI erstellen (einmal)
 		// ------------------------------
-		this.inventoryUI = new InventoryUI(this, null);
 		inventorybtn.on("pointerdown", () => this.toggleInventoryUI());
 
 		// ------------------------------
@@ -57,7 +55,6 @@ export default class UIScene extends Phaser.Scene {
 		// ------------------------------
 		this.gameScene.events.on("localPlayerReady", (player) => {
 			this.player = player;
-			this.inventoryUI.inventory = player.inventory;
 
 			plusbtn.on("pointerdown", () => player.camera?.zoomIn());
 			minusbtn.on("pointerdown", () => player.camera?.zoomOut());
@@ -106,16 +103,23 @@ export default class UIScene extends Phaser.Scene {
 			const startY = (window.innerHeight - invHeight) / 2;
 
 			// Spieler-Inventar links
-			this.inventoryUI.setPosition(startX, startY);
-			this.inventoryUI.inventory.type = "sell";
-			this.inventoryUI.container.setVisible(true);
-			this.inventoryUI.refresh();
+			//this.inventoryUI.setPosition(startX, startY);
+			this.player.inventoryUI.type = "sell";
+			this.player.inventoryUI.setLayout({
+				size: "half",
+				position: "left",
+			});
+			this.player.inventoryUI.toggle();
+			this.player.inventoryUI.refresh();
 
 			// NPC-Inventar rechts
 			if (this.otherinventoryUI) this.otherinventoryUI.destroy();
-			this.otherinventoryUI = new InventoryUI(this, npcInventory);
-			this.otherinventoryUI.setPosition(this.inventoryUI.container.x, this.inventoryUI.container.y + 300);
-			this.otherinventoryUI.container.setVisible(true);
+			this.otherinventoryUI = new InventoryUI(this, npcInventory, {
+				size: "half",
+				position: "right",
+			});
+			this.otherinventoryUI.type = "buy";
+			this.otherinventoryUI.toggle();
 			this.otherinventoryUI.refresh();
 		});
 
@@ -150,12 +154,8 @@ export default class UIScene extends Phaser.Scene {
 	// INVENTORY
 	// =================================================
 	toggleInventoryUI() {
-		if (!this.inventoryUI) return;
-		this.inventoryUI.toggle();
-		// NPC nur sichtbar, wenn Spieler-Inventar sichtbar
-		if (this.otherinventoryUI) {
-			this.otherinventoryUI.container.setVisible(this.inventoryUI.container.visible && this.otherinventoryUI.container.visible);
-		}
+		if (!this.player) return;
+		this.player.inventoryUI.toggle();
 	}
 
 	// =================================================

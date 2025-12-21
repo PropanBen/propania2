@@ -7,6 +7,7 @@ import PlayerInteractionController from "./playerInteractionController";
 import PlayerCameraController from "./playerCameraController";
 import PlayerNetworking from "./playerNetworking";
 import Inventory from "./inventory";
+import InventoryUI from "./inventoryUI";
 
 export default class Player extends Phaser.Physics.Arcade.Sprite {
 	constructor(scene, playerInfo) {
@@ -76,9 +77,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 		//	this.interaction = new PlayerInteractionController(scene, this);
 		this.network = new PlayerNetworking(this);
 		this.inventory = new Inventory(this.inventory_id, "player");
-		if (this.inventory) {
-			this.scene.events.emit("inventory:ready");
-		}
+		if (this.inventory) this.inventoryUI = new InventoryUI(this.scene, this.inventory);
 
 		if (this.isLocal()) {
 			this.camera = new PlayerCameraController(scene, this);

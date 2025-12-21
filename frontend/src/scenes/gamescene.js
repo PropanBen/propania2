@@ -177,8 +177,7 @@ export default class GameScene extends Phaser.Scene {
 
 			this.localPlayer.inventory.loadFromServer(data);
 
-			const ui = this.scene.get("UIScene")?.inventoryUI;
-			if (ui) ui.refresh();
+			this.localPlayer.inventoryUI.refresh();
 		});
 
 		socket.on("inventory:item:remove", () => {
@@ -277,6 +276,7 @@ export default class GameScene extends Phaser.Scene {
 			this.localPlayer.interaction.performAction("drop");
 		}
 		if (Phaser.Input.Keyboard.JustDown(this.keyI) && this.localPlayer) {
+			this.localPlayer.inventoryUI.type = "drop";
 			this.game.events.emit("toggleInventory", this.localPlayer.inventory);
 		}
 		if (Phaser.Input.Keyboard.JustDown(this.keyT) && this.localPlayer) {

@@ -17,3 +17,211 @@ canvas {
 	image-rendering: pixelated;
 	image-rendering: crisp-edges;
 }
+
+/* inventory.css */
+.inventory-ui {
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	background: #deb887;
+	border: 3px solid #000;
+	display: none;
+	flex-direction: column;
+	padding: 10px;
+	box-sizing: border-box;
+	z-index: 9999;
+	border-radius: 10px;
+	overflow-y: auto;
+	max-height: 90%;
+}
+
+.inventory-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 10px;
+}
+
+.inventory-title {
+	font-weight: bold;
+	font-size: 1.2rem;
+}
+
+.inventory-close {
+	font-size: 1.2rem;
+	font-weight: bold;
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	color: #ff4444;
+}
+
+.inventory-items {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.inventory-item {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	background: #fff8dc;
+	border: 1px solid #000;
+	border-radius: 6px;
+	padding: 5px;
+	gap: 10px;
+}
+
+.item-icon img {
+	width: 60px;
+	height: 60px;
+	image-rendering: pixelated; /* Pixel-Art scharf skalieren */
+	image-rendering: crisp-edges;
+	object-fit: contain;
+	cursor: pointer;
+}
+
+.item-info {
+	flex: 1;
+}
+
+.item-name {
+	font-weight: bold;
+	cursor: pointer;
+}
+
+.item-controls {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+}
+
+.item-controls input {
+	width: 50px;
+	text-align: center;
+}
+
+.item-controls button {
+	padding: 4px 6px;
+	cursor: pointer;
+}
+
+.inventory-popup {
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	display: none;
+	background: #deb887;
+	border: 3px solid #000;
+	border-radius: 10px;
+	padding: 15px;
+	z-index: 10000;
+	max-width: 80%;
+}
+
+.minus-btn {
+	width: 50px;
+	height: 50px;
+	image-rendering: pixelated; /* Pixel-Art scharf skalieren */
+	image-rendering: crisp-edges;
+	object-fit: contain;
+}
+
+.plus-btn {
+	width: 50px;
+	height: 50px;
+	image-rendering: pixelated; /* Pixel-Art scharf skalieren */
+	image-rendering: crisp-edges;
+	object-fit: contain;
+}
+
+.action-btn {
+	width: 70px;
+	height: 50px;
+	background-color: #deb887;
+	border-radius: 10px;
+	cursor: pointer;
+}
+
+.popup-content p {
+	margin: 5px 0;
+}
+
+.popup-close {
+	margin-top: 10px;
+	cursor: pointer;
+}
+
+/* UiScene */
+
+/* Stats */
+#stats-container {
+	position: fixed;
+	left: 20px;
+	top: 20px;
+	color: #fff;
+	font-size: 18px;
+	z-index: 1000;
+}
+
+/* Buttons */
+.ui-button {
+	position: fixed;
+	width: 60px;
+	height: 60px;
+	font-size: 16px;
+	cursor: pointer;
+}
+
+/* Chat */
+#chat-container {
+	position: fixed;
+	left: 10px;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 300px;
+	max-height: 400px;
+	background: rgba(0, 0, 0, 0.5);
+	display: flex;
+	flex-direction: column;
+	border-radius: 10px;
+	font-size: 14px;
+	z-index: 1000;
+}
+
+#chat-messages {
+	flex: 1;
+	padding: 10px;
+	overflow-y: auto;
+	color: #fff;
+}
+
+#chat-input {
+	width: 100%;
+	box-sizing: border-box;
+	padding: 5px;
+}
+
+/* Joystick */
+#joystick-container {
+	position: fixed;
+	left: 20px;
+	bottom: 20px;
+	width: 160px;
+	height: 160px;
+	z-index: 1000;
+	pointer-events: auto;
+}
+
+#joystick-stick {
+	position: absolute;
+	width: 80px;
+	height: 80px;
+	border-radius: 50%;
+	background: rgba(255, 255, 255, 0.6);
+	left: 40px;
+	top: 40px;
+}

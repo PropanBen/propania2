@@ -1,261 +1,254 @@
-import Functions from "../assets/utils/functions.js";
+// inventoryUI.js
 import itemsList from "./itemslist.js";
 
 export default class InventoryUI {
-	constructor(scene, inventory) {
+	constructor(scene, inventory, layout = {}) {
 		this.scene = scene;
 		this.inventory = inventory;
 
-		this.updateDimensions();
+		this.layout = {
+			size: layout.size || "full",
+			position: layout.position || "center",
+		};
 
-		this.container = this.scene.add.container(this.left, this.top).setDepth(9999);
+		this.type = "drop";
+		this.isVisible = false;
 
-		// Hintergrund und Rahmen
-		this.bg = this.scene.add.rectangle(0, 0, this.width, this.height, 0xdeb887, 0.8).setOrigin(0);
-		this.border = this.scene.add.rectangle(0, 0, this.width, this.height).setStrokeStyle(3, 0x000000).setOrigin(0);
-		this.title = this.scene.add.text(this.padding, this.padding, "Inventory", {
-			fontSize: Math.floor(24 * this.iconScale) + "px",
-			fontStyle: "bold",
-			color: "#000000ff",
-		});
+		this.ui = document.createElement("div");
+		this.ui.className = "inventory-ui";
 
-		// Close Button
-		this.closeBtn = this.scene.add
-			.text(this.width - this.padding - 30, this.padding, "X", {
-				fontSize: Math.floor(32 * this.iconScale) + "px",
-				fontStyle: "bold",
-				color: "#ff4444",
-			})
-			.setInteractive()
-			.on("pointerdown", () => this.hide());
+		this.ui.innerHTML = `
+			<div class="inventory-header">
+				<span class="inventory-title">Inventory</span>
+				<button class="inventory-close">X</button>
+			</div>
+			<div class="inventory-items"></div>
+			<div class="inventory-popup">
+				<div class="popup-content">
+					<p class="popup-description"></p>
+					<p class="popup-price"></p>
+					<button class="popup-close">Close</button>
+				</div>
+			</div>
+		`;
 
-		this.itemList = this.scene.add.container(this.padding, this.padding + 40);
+		document.body.appendChild(this.ui);
 
-		this.container.add([this.bg, this.border, this.title, this.closeBtn, this.itemList]);
-		this.container.setVisible(false);
+		this.itemsContainer = this.ui.querySelector(".inventory-items");
+		this.popup = this.ui.querySelector(".inventory-popup");
+		this.popupDescription = this.ui.querySelector(".popup-description");
+		this.popupPrice = this.ui.querySelector(".popup-price");
 
-		this.enableDragging(this.container);
-		this.createPopup();
+		this.ui.querySelector(".inventory-close").addEventListener("click", () => this.hide());
+		this.ui.querySelector(".popup-close").addEventListener("click", () => this.hidePopup());
 
-		window.addEventListener("resize", () => this.resize());
+		// Drag & Drop
+		this.initDrag();
+
+		this.applyLayout();
+		window.addEventListener("resize", () => this.applyLayout());
 	}
 
-	updateDimensions() {
-		this.width = window.innerWidth * 0.8;
-		this.height = window.innerHeight * 0.8;
-		this.left = (window.innerWidth - this.width) / 2;
-		this.top = (window.innerHeight - this.height) / 2;
-		this.iconScale = Math.min(this.width / 600, this.height / 400);
-		this.padding = 10;
-	}
+	// =================================================
+	// Drag & Drop
+	// =================================================
+	initDrag() {
+		const header = this.ui.querySelector(".inventory-header");
+		let offsetX = 0,
+			offsetY = 0,
+			isDragging = false;
 
-	enableDragging(container) {
-		container.setInteractive(new Phaser.Geom.Rectangle(0, 0, this.width, this.height), Phaser.Geom.Rectangle.Contains);
-		this.scene.input.setDraggable(container);
-		container.on("drag", (pointer, dragX, dragY) => {
-			container.x = dragX;
-			container.y = dragY;
-			if (this.popup) this.centerPopup();
+		header.style.cursor = "grab";
+
+		header.addEventListener("mousedown", (e) => {
+			isDragging = true;
+			offsetX = e.clientX - this.ui.getBoundingClientRect().left;
+			offsetY = e.clientY - this.ui.getBoundingClientRect().top;
+			header.style.cursor = "grabbing";
+			e.preventDefault();
+		});
+
+		document.addEventListener("mousemove", (e) => {
+			if (!isDragging) return;
+			const x = e.clientX - offsetX;
+			const y = e.clientY - offsetY;
+			Object.assign(this.ui.style, {
+				left: `${x}px`,
+				top: `${y}px`,
+				transform: "none", // transform entfernen beim Drag
+			});
+		});
+
+		document.addEventListener("mouseup", () => {
+			if (isDragging) {
+				isDragging = false;
+				header.style.cursor = "grab";
+			}
 		});
 	}
 
-	createPopup() {
-		this.popupWidth = this.width * 0.5;
-		this.popupHeight = this.height * 0.3;
-
-		this.popup = this.scene.add.container(0, 0).setDepth(10000);
-
-		const bg = this.scene.add.rectangle(0, 0, this.popupWidth, this.popupHeight, 0xdeb887, 0.9).setOrigin(0.5);
-		const border = this.scene.add.rectangle(0, 0, this.popupWidth, this.popupHeight).setStrokeStyle(3, 0x000000).setOrigin(0.5);
-
-		this.popupText = this.scene.add.text(-this.popupWidth / 2 + 10, -this.popupHeight / 2 + 10, "", {
-			fontSize: Math.floor(20 * this.iconScale) + "px",
-			fontStyle: "bold",
-			color: "#000000ff",
-			wordWrap: { width: this.popupWidth - 20 },
-		});
-
-		this.popupPriceText = this.scene.add.text(-this.popupWidth / 2 + 10, this.popupHeight / 2 - 40, "", {
-			fontSize: Math.floor(20 * this.iconScale) + "px",
-			fontStyle: "bold",
-			color: "#000000ff",
-			wordWrap: { width: this.popupWidth - 20 },
-		});
-
-		const closeBtn = this.scene.add
-			.text(this.popupWidth / 2 - 30, -this.popupHeight / 2 + 10, "X", {
-				fontSize: Math.floor(24 * this.iconScale) + "px",
-				fontStyle: "bold",
-				color: "#ff4444",
-			})
-			.setInteractive()
-			.on("pointerdown", () => this.popup.setVisible(false));
-
-		this.popup.add([bg, border, this.popupText, this.popupPriceText, closeBtn]);
-		this.popup.setVisible(false);
+	// =================================================
+	// Layout
+	// =================================================
+	setLayout(layout = {}) {
+		this.layout = { ...this.layout, ...layout };
+		this.applyLayout();
 	}
 
-	centerPopup() {
-		if (!this.container || !this.popup) return;
-		this.popup.x = this.container.x + this.width / 2;
-		this.popup.y = this.container.y + this.height / 2;
+	applyLayout() {
+		const vw = window.innerWidth;
+		const vh = window.innerHeight;
+
+		let widthFactor = 0.6;
+		let heightFactor = 0.7;
+
+		if (this.layout.size === "half") widthFactor = 0.45;
+		if (this.layout.size === "quarter") widthFactor = 0.3;
+
+		const width = vw * widthFactor;
+		const height = vh * heightFactor;
+
+		let left, top;
+		let transform = "";
+
+		switch (this.layout.position) {
+			case "left":
+				left = vw * 0.05;
+				top = vh / 2;
+				transform = "translateY(-50%)";
+				break;
+			case "right":
+				left = vw - width - vw * 0.05;
+				top = vh / 2;
+				transform = "translateY(-50%)";
+				break;
+			default:
+				left = vw / 2;
+				top = vh / 2;
+				transform = "translate(-50%, -50%)";
+				break;
+		}
+
+		// Nur Layout setzen, wenn noch nicht per Drag verschoben
+		if (!this.isDraggingManual) {
+			Object.assign(this.ui.style, {
+				position: "fixed",
+				width: `${width}px`,
+				height: `${height}px`,
+				left: `${left}px`,
+				top: `${top}px`,
+				transform: transform,
+				display: this.isVisible ? "flex" : "none",
+				maxHeight: `${vh * 0.9}px`,
+				overflowY: "auto",
+			});
+		}
+	}
+
+	// =================================================
+	// INVENTORY
+	// =================================================
+	setInventory(inventory, type) {
+		this.inventory = inventory;
+		this.type = type;
+		this.refresh();
 	}
 
 	refresh() {
 		if (!this.inventory || !this.inventory.items) return;
-
-		this.itemList.removeAll(true);
-		let y = 0;
-		const itemHeight = 50 * this.iconScale;
-		const iconSize = itemHeight - 10;
-
-		const controlsX = this.width - 300; // Abstand für Controls rechts
+		this.itemsContainer.innerHTML = "";
 
 		this.inventory.items.forEach((item) => {
-			const frameIndex = Functions.getFrameFromItemListWithKey(item.key, itemsList);
+			const itemDiv = document.createElement("div");
+			itemDiv.className = "inventory-item";
 
-			// Icon links
-			const icon = this.scene.add
-				.sprite(this.padding + iconSize / 2, y + iconSize / 2 + 30, "items", frameIndex)
-				.setDisplaySize(iconSize, iconSize)
-				.setInteractive()
-				.on("pointerdown", () => this.showDescription(item));
+			itemDiv.innerHTML = `
+				<div class="item-icon">
+					<img class="item-icon-img" src="/src/assets/items/${item.key}.png" />
+				</div>
+				<div class="item-info">
+					<span class="item-name">${item.name}</span>
+					<span class="item-quantity">x${item.quantity}</span>
+				</div>
+				<div class="item-controls">
+					<img class="minus-btn" src="/src/assets/ui/minus_red.png" />
+					<input type="number" class="drop-amount" value="1" min="1" max="${item.quantity}" />
+					<img class="plus-btn" src="/src/assets/ui/plus_green.png" />
+					<button class="action-btn">${this.getActionText()}</button>
+				</div>
+			`;
 
-			// Name rechts neben Icon
-			const name = this.scene.add.text(this.padding + iconSize + 10, y + 30, item.name, {
-				fontSize: Math.floor(20 * this.iconScale) + "px",
-				fontStyle: "bold",
-				color: "#0099ffff",
+			const dropInput = itemDiv.querySelector(".drop-amount");
+			const minusBtn = itemDiv.querySelector(".minus-btn");
+			const plusBtn = itemDiv.querySelector(".plus-btn");
+			const actionBtn = itemDiv.querySelector(".action-btn");
+			const iconImg = itemDiv.querySelector(".item-icon-img");
+			const name = itemDiv.querySelector(".item-name");
+
+			let amount = 1;
+
+			minusBtn.addEventListener("click", () => {
+				amount = amount === 1 ? item.quantity : amount - 1;
+				dropInput.value = amount;
 			});
-			name.setInteractive().on("pointerdown", () => this.showDescription(item));
 
-			// Quantity Text, Drop Input und Buttons rechts
-			const quantityText = this.scene.add.text(controlsX - 200, y + 30, `x${item.quantity}`, {
-				fontSize: Math.floor(20 * this.iconScale) + "px",
-				fontStyle: "bold",
-				color: "#000000ff",
+			plusBtn.addEventListener("click", () => {
+				amount = amount === item.quantity ? 1 : amount + 1;
+				dropInput.value = amount;
 			});
 
-			if (!item.dropAmount) item.dropAmount = 1;
+			dropInput.addEventListener("input", () => {
+				amount = Math.min(item.quantity, Math.max(1, Number(dropInput.value) || 1));
+				dropInput.value = amount;
+			});
 
-			const dropInput = this.scene.add
-				.text(controlsX, y + 45, item.dropAmount.toString(), {
-					fontSize: Math.floor(20 * this.iconScale) + "px",
-					fontStyle: "bold",
-					color: "#000000ff",
-				})
-				.setOrigin(0.5);
+			actionBtn.addEventListener("click", () => this.performAction(item, amount));
+			iconImg.addEventListener("click", () => this.showPopup(item));
+			name.addEventListener("click", () => this.showPopup(item));
 
-			// Minus Icon
-			const minusArrow = this.scene.add
-				.sprite(controlsX - 100, y + itemHeight / 2, "minus_red")
-				.setDisplaySize(itemHeight * 0.6, itemHeight * 0.6)
-				.setInteractive()
-				.on("pointerdown", () => {
-					if (item.dropAmount <= 1) item.dropAmount = item.quantity;
-					else item.dropAmount = Math.max(1, item.dropAmount - 1);
-					dropInput.setText(item.dropAmount.toString());
-				});
-
-			// Plus Icon
-			const plusArrow = this.scene.add
-				.sprite(controlsX + 100, y + itemHeight / 2, "plus_green")
-				.setDisplaySize(itemHeight * 0.6, itemHeight * 0.6)
-				.setInteractive()
-				.on("pointerdown", () => {
-					item.dropAmount = Math.min(item.quantity, item.dropAmount + 1);
-					dropInput.setText(item.dropAmount.toString());
-				});
-
-			let dropBtn = this.scene.add
-				.text(controlsX + 150, y + 30, this.inventory.type === "buy" ? "Buy" : this.inventory.type === "sell" ? "Sell" : "Drop", {
-					fontSize: Math.floor(20 * this.iconScale) + "px",
-					fontStyle: "bold",
-					color: "#ff0000",
-				})
-				.setInteractive()
-				.on("pointerdown", () => {
-					if (this.inventory.type === "drop") this.inventory.dropItem(this.inventory.inventory_id, item, item.dropAmount);
-					if (this.inventory.type === "buy") this.inventory.buyItem(this.inventory.inventory_id, item.item_id, item.dropAmount);
-					if (this.inventory.type === "sell") this.inventory.sellItem(this.inventory.inventory_id, item.item_id, item.dropAmount);
-				});
-
-			this.itemList.add([icon, name, quantityText, dropInput, minusArrow, plusArrow, dropBtn]);
-			y += itemHeight;
+			this.itemsContainer.appendChild(itemDiv);
 		});
 	}
 
-	showDescription(item) {
-		const description = itemsList.find((i) => i.key === item.key)?.description || "No description";
-		const price = itemsList.find((i) => i.key === item.key)?.price || "No price";
-		this.popupText.setText(description);
-		this.popupPriceText.setText("Price: " + price);
-		this.centerPopup();
-		this.popup.setVisible(true);
+	getActionText() {
+		if (this.type === "buy") return "Buy";
+		if (this.type === "sell") return "Sell";
+		return "Drop";
+	}
+
+	performAction(item, amount) {
+		if (!this.inventory) return;
+		if (this.type === "drop") this.inventory.dropItem(this.inventory.inventory_id, item, amount);
+		if (this.type === "buy") this.inventory.buyItem(this.inventory.inventory_id, item.item_id, amount);
+		if (this.type === "sell") this.inventory.sellItem(this.inventory.inventory_id, item.item_id, amount);
+	}
+
+	showPopup(item) {
+		const def = itemsList.find((i) => i.key === item.key) || {};
+		this.popupDescription.textContent = def.description || "No description";
+		this.popupPrice.textContent = "Price: " + (def.price ?? "-");
+		this.popup.style.display = "flex";
+	}
+
+	hidePopup() {
+		this.popup.style.display = "none";
 	}
 
 	toggle() {
-		if (this.container.visible) this.container.setVisible(false);
-		else this.container.setVisible(true);
-		this.refresh();
+		this.isVisible = !this.isVisible;
+		this.applyLayout();
+		if (this.isVisible) this.refresh();
 	}
 
 	hide() {
-		this.container.setVisible(false);
-		this.popup.setVisible(false);
-	}
-
-	resize() {
-		this.updateDimensions();
-		this.container.x = this.left;
-		this.container.y = this.top;
-
-		if (this.bg) {
-			this.bg.width = this.width;
-			this.bg.height = this.height;
-		}
-		if (this.border) {
-			this.border.width = this.width;
-			this.border.height = this.height;
-		}
-		if (this.closeBtn) this.closeBtn.x = this.width - this.padding - 30;
-
-		this.refresh();
-
-		if (this.popup) {
-			this.popupWidth = this.width * 0.5;
-			this.popupHeight = this.height * 0.3;
-			this.popup.getAt(0).width = this.popupWidth;
-			this.popup.getAt(0).height = this.popupHeight;
-			this.popup.getAt(1).width = this.popupWidth;
-			this.popup.getAt(1).height = this.popupHeight;
-			this.centerPopup();
-		}
-	}
-
-	setPosition(x, y) {
-		if (this.container) {
-			this.container.x = x;
-			this.container.y = y;
-		}
-		if (this.popup) this.centerPopup();
+		this.isVisible = false;
+		this.applyLayout();
+		this.hidePopup();
 	}
 
 	destroy() {
-		if (this.container) {
-			this.container.removeAll(true);
-			this.container.destroy();
-			this.container = null;
-		}
-		if (this.popup) {
-			this.popup.removeAll(true);
-			this.popup.destroy();
-			this.popup = null;
-		}
-		this.inventory = null;
-		this.scene = null;
-		this.itemList = null;
-		this.popupText = null;
-		this.popupPriceText = null;
+		this.hidePopup();
+		if (this.ui) this.ui.remove();
+		this.ui = null;
 	}
 }

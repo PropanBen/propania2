@@ -377,7 +377,7 @@ export function initGameServer(io) {
 				dbAnimals.forEach((a) => {
 					animals.set(a.id, {
 						...a,
-						speed: 30,
+						speed: 10,
 						target: null,
 						state: "idle",
 						last_direction: "down",
