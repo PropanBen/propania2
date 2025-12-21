@@ -18,6 +18,7 @@ export default class GameScene extends Phaser.Scene {
 		this.players = {};
 		this.resources = {};
 		this.worldItems = {};
+		this.animals = {};
 	}
 
 	init(data) {
@@ -30,6 +31,9 @@ export default class GameScene extends Phaser.Scene {
 	}
 
 	create() {
+		if (this.sys.game.device.os.android || this.sys.game.device.os.iOS) {
+			this.sys.game.renderer.resolution = 1;
+		}
 		this.scene.launch("UIScene");
 		// Groups
 		this.playerGroup = this.physics.add.group();
@@ -42,16 +46,21 @@ export default class GameScene extends Phaser.Scene {
 
 		// Tilemap und Layer
 
+		const mapbg = this.add.rectangle(-7936, -7936, 15872, 15872, 0x6fbd29, 1).setOrigin(0);
+		mapbg.setDepth(-1);
+
 		const map = this.make.tilemap({ key: "map" });
 		const groundTiles = map.addTilesetImage("tileset_ground", "ground");
 
 		const groundLayer = map.createLayer("ground", groundTiles, 0, 0);
 		groundLayer.setDepth(0);
-		//	groundLayer.setRoundPixels(true);
+		//groundLayer.setRoundPixels(true);
 		this.groundLayer = groundLayer;
 
 		const mapWidth = map.widthInPixels;
 		const mapHeight = map.heightInPixels;
+
+		this.textures.get("ground").setFilter(Phaser.Textures.FilterMode.NEAREST);
 
 		// Map zentrieren → (0|0) = Mitte
 		groundLayer.setPosition(Math.floor(-mapWidth / 2), Math.floor(-mapHeight / 2));
@@ -60,8 +69,9 @@ export default class GameScene extends Phaser.Scene {
 		this.physics.world.setBounds(-mapWidth / 2, -mapHeight / 2, mapWidth, mapHeight, true, true, true, true);
 
 		// Camera Bounds (wichtig!)
-		this.cameras.main.setBounds(-mapWidth / 2, -mapHeight / 2, mapWidth, mapHeight);
+		//this.cameras.main.setBounds(-mapWidth / 2, -mapHeight / 2, mapWidth, mapHeight);
 		this.cameras.main.roundPixels = true;
+		this.cameras.main.setRoundPixels(true);
 
 		// Input keys
 		this.keyE = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
@@ -94,12 +104,6 @@ export default class GameScene extends Phaser.Scene {
 		this.merchantcart = new WorldObject(this, 200, 1000, "merchantcart", "cart");
 
 		// Animals
-
-		const sheep = new Animal(this, { type: "sheep", id: "sheep_1", x: 0, y: 800, health: 100 });
-		const sheep2 = new Animal(this, { type: "sheep", id: "sheep_2", x: 500, y: 800, health: 100 });
-		const sheep3 = new Animal(this, { type: "sheep", id: "sheep_3", x: -500, y: 800, health: 100 });
-		const sheep4 = new Animal(this, { type: "sheep", id: "sheep_4", x: 0, y: 200, health: 100 });
-		const sheep5 = new Animal(this, { type: "sheep", id: "sheep_5", x: -500, y: 2000, health: 100 });
 
 		// ------------------------------
 		// Socket Events
@@ -203,6 +207,17 @@ export default class GameScene extends Phaser.Scene {
 			}
 		});
 
+		socket.on("animals:update", (animals) => {
+			this.AddAnimal(animals);
+		});
+
+		socket.on("animal:update", (data) => {
+			const animal = this.animals[data.id];
+			if (!animal) return;
+
+			animal.syncFromServer(data);
+		});
+
 		socket.on("Show:Dialogbox", (text) => {
 			this.localPlayer.showDialog(text);
 		});
@@ -213,6 +228,10 @@ export default class GameScene extends Phaser.Scene {
 		});
 		socket.on("Play:Sound:Drop", () => {
 			this.sound.play("drop");
+		});
+
+		socket.on("Play:Sound:Pop", () => {
+			this.sound.play("pop");
 		});
 
 		// ------------------------------
@@ -239,8 +258,10 @@ export default class GameScene extends Phaser.Scene {
 		socket.emit("playerJoin", this.playerData);
 		//Load world items
 		socket.emit("world:items:load");
-		// Laod Resources
+		// Load Resources
 		socket.emit("world:resources:load");
+		// Load Animals
+		socket.emit("world:animals:load");
 	}
 
 	update() {
@@ -305,6 +326,15 @@ export default class GameScene extends Phaser.Scene {
 				this.resources[res.id] = resourceObj;
 				this.resourcesGroup.add(resourceObj);
 				this.interactablesGroup.add(resourceObj);
+			}
+		});
+	}
+
+	AddAnimal(animals) {
+		animals.forEach((data) => {
+			if (!this.animals[data.id]) {
+				const animal = new Animal(this, data);
+				this.animals[data.id] = animal;
 			}
 		});
 	}

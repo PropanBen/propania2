@@ -16,6 +16,8 @@ import {
 	withTransaction,
 	PlayerRemoveMoney,
 	PlayerAddMoney,
+	loadAnimals,
+	DeleteAnimal,
 } from "../database/db.js";
 import Functions from "../utils/functions.js";
 import resourcesDrops from "../entities/resourcedrops.js";
@@ -26,6 +28,31 @@ export function initGameServer(io) {
 	const worldItems = new Map();
 	const worldResources = new Map();
 	const npcInventories = new Map();
+	const animals = new Map();
+
+	// Helper function to sync animal to all clients
+	function syncAnimalToAllIfMoved(animal) {
+		if (!animal._lastSync) animal._lastSync = {};
+		const dx = animal.x - (animal._lastSync.x ?? 0);
+		const dy = animal.y - (animal._lastSync.y ?? 0);
+		const d = Math.hypot(dx, dy);
+
+		if (d < 0.5 && animal.state === animal._lastSync.state) return; // Bewegung zu klein, skip
+
+		animal._lastSync.x = animal.x;
+		animal._lastSync.y = animal.y;
+		animal._lastSync.state = animal.state;
+
+		io.emit("animal:update", {
+			id: animal.id,
+			x: animal.x,
+			y: animal.y,
+			state: animal.state,
+			last_direction: animal.last_direction,
+			currenthealth: animal.currenthealth,
+			followTarget: animal.followTarget,
+		});
+	}
 
 	async function ensureWorldItemsLoaded() {
 		if (worldItems.size > 0) return;
@@ -92,6 +119,16 @@ export function initGameServer(io) {
 			console.log(text);
 			socket.emit("Show:Dialogbox", text);
 			socket.broadcast.emit("Show:Dialogbox", text);
+		});
+
+		socket.on("playerlogout", (reason) => {
+			const player = players[socket.id];
+			if (player) updatePlayer(player).catch(console.error);
+
+			delete players[socket.id];
+			io.emit("playerDisconnected", socket.id);
+
+			console.log(`Player disconnected: ${socket.id}`, reason);
 		});
 
 		socket.on("disconnect", (reason) => {
@@ -191,6 +228,7 @@ export function initGameServer(io) {
 
 				socket.emit("world:item:add", item);
 				socket.broadcast.emit("world:item:add", item);
+				socket.emit("Play:Sound:Pop");
 			}
 		});
 
@@ -330,6 +368,154 @@ export function initGameServer(io) {
 		process.on("unhandledRejection", (reason) => {
 			console.error(reason);
 			io.emit("Show:Dialogbox", `Server Error: ${reason}`);
+		});
+
+		// Animals
+		socket.on("world:animals:load", async () => {
+			if (animals.size === 0) {
+				const dbAnimals = await loadAnimals();
+				dbAnimals.forEach((a) => {
+					animals.set(a.id, {
+						...a,
+						speed: 30,
+						target: null,
+						state: "idle",
+						last_direction: "down",
+						followTarget: null,
+					});
+				});
+			}
+
+			socket.emit("animals:update", Array.from(animals.values()));
+		});
+
+		socket.on("animal:state:change", (animalId, playerId) => {
+			const animal = animals.get(animalId);
+			if (!animal) return;
+
+			const player = Object.values(players).find((p) => p.id === playerId);
+			if (!player) return;
+
+			if (animal.followTarget === playerId) {
+				// Stoppen
+				console.log(`[DEBUG] Stopping animal ${animalId} from following player ${playerId}`);
+				animal.followTarget = null;
+				animal.target = null;
+				animal.state = "idle"; // optional, Server-Loop setzt ggf. wieder walk/random
+			} else {
+				// Starten
+				console.log(`[DEBUG] Starting animal ${animalId} to follow player ${playerId}`);
+				animal.followTarget = playerId;
+				animal.target = null;
+				animal.state = "follow"; // optional, Animation
+			}
+
+			syncAnimalToAllIfMoved(animal);
+		});
+
+		// Haupt-Game-Loop für Tiere (alle 100ms)
+		setInterval(() => {
+			for (const animal of animals.values()) {
+				if (!animal.alive) continue;
+
+				const speed = animal.speed || 30;
+
+				// FOLLOW logic
+				if (animal.followTarget) {
+					const player = Object.values(players).find((p) => p.id === animal.followTarget);
+
+					if (player) {
+						const offset = 40; // Abstand zum Spieler
+						const dx = player.x - animal.x;
+						const dy = player.y - animal.y;
+						const dist = Math.hypot(dx, dy);
+
+						// DEBUG Log
+						if (Math.random() < 0.01) {
+							// Nur 1% der Zeit loggen
+							console.log(`[DEBUG] Animal ${animal.id} following player ${player.id}, distance: ${dist.toFixed(1)}`);
+						}
+
+						if (dist > offset) {
+							// Bewegung zum Spieler
+							const moveX = (dx / dist) * speed * 0.05;
+							const moveY = (dy / dist) * speed * 0.05;
+
+							animal.x += moveX;
+							animal.y += moveY;
+
+							animal.state = "walk"; // ODER "follow", je nach Animation
+							animal.last_direction = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : dy > 0 ? "down" : "up";
+						} else {
+							// Nah genug am Spieler
+							animal.state = "idle";
+							animal.last_direction = animal.last_direction || "down";
+						}
+					} else {
+						// Spieler nicht gefunden (offline)
+						console.log(`[WARN] Player ${animal.followTarget} not found for animal ${animal.id}`);
+						animal.state = "idle";
+						animal.followTarget = null;
+						animal.target = null;
+					}
+				}
+				// RANDOM WALK
+				else {
+					if (!animal.target || Math.random() < 0.01) {
+						animal.target = {
+							x: animal.x + Math.random() * 400 - 200,
+							y: animal.y + Math.random() * 400 - 200,
+						};
+						animal.state = "walk";
+					}
+
+					if (animal.target) {
+						const dx = animal.target.x - animal.x;
+						const dy = animal.target.y - animal.y;
+						const dist = Math.hypot(dx, dy);
+
+						if (dist < 5) {
+							animal.state = "idle";
+							animal.target = null;
+						} else {
+							const moveX = (dx / dist) * speed * 0.05;
+							const moveY = (dy / dist) * speed * 0.05;
+
+							animal.x += moveX;
+							animal.y += moveY;
+
+							animal.last_direction = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : dy > 0 ? "down" : "up";
+						}
+					}
+				}
+
+				// Update an alle Clients senden
+				syncAnimalToAllIfMoved(animal);
+			}
+		}, 100);
+
+		socket.on("animal:hit", async (animalId, damage) => {
+			const animal = animals.get(animalId);
+
+			if (!animal || !animal.alive) return;
+
+			animal.currenthealth -= damage;
+
+			io.emit("animal:hitted", animalId);
+
+			if (animal.currenthealth <= 0) {
+				animal.alive = 0;
+				animal.state = "dead";
+
+				animals.delete(animal.id);
+				//	DeleteAnimal(animalId);
+
+				io.emit("animal:dead", {
+					id: animal.id,
+					x: animal.x,
+					y: animal.y,
+				});
+			}
 		});
 	});
 }

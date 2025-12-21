@@ -1,21 +1,26 @@
-// src/entities/animal.js
+// client/entities/animal.js
+
+import Phaser from "phaser";
 import { socket } from "../socket.js";
 
 export default class Animal extends Phaser.Physics.Arcade.Sprite {
-	constructor(scene, animalInfo) {
-		super(scene, animalInfo.x, animalInfo.y, animalInfo.type);
+	constructor(scene, data) {
+		super(scene, data.x, data.y, data.spritekey);
 
 		this.scene = scene;
-		this.type = animalInfo.type;
 
-		this.id = animalInfo.id;
-		this.name = animalInfo.name || animalInfo.type;
-		this.health = animalInfo.health || 100;
-		this.maxHealth = animalInfo.maxHealth || 100;
+		// ---- Server-Daten ----
+		this.id = data.id;
+		this.type = data.type;
+		this.spritekey = data.spritekey;
 
-		this.state = "idle";
-		this.lastDirection = "down";
+		this.state = data.state || "idle";
+		this.lastDirection = data.last_direction || "down";
+		this.currentHealth = data.currenthealth ?? 100;
+		this.followTarget = data.followTarget || null;
+		this.target = null;
 
+		// ---- Phaser Setup ----
 		scene.add.existing(this);
 		scene.physics.add.existing(this);
 		scene.animalGroup.add(this);
@@ -24,157 +29,89 @@ export default class Animal extends Phaser.Physics.Arcade.Sprite {
 		this.body.setOffset(3.5, 3.5);
 		this.body.allowGravity = false;
 
-		this.setScale(1);
-		this.setDepth(1000);
-
+		// ---- Animation Controller ----
 		this.animation = new AnimalAnimationController(scene, this);
 
-		this.speed = 30;
-		this.runSpeed = 100;
-		this.targetPos = null;
+		// ---- Socket Events ----
+		socket.on("animal:update", (data) => {
+			if (this.id !== data.id) return;
+			this.syncFromServer(data);
+		});
 
-		this.network = new AnimalNetworking(this);
+		socket.on("animal:hitted", (animalId) => {
+			if (this.id !== animalId) return;
+			this.onHit();
+		});
 
-		this.moveEvent = this.scene.time.addEvent({
-			delay: 2000,
-			callback: this.chooseRandomTarget,
-			callbackScope: this,
-			loop: true,
+		socket.on("animal:dead", (data) => {
+			if (data.id !== this.id) return;
+			this.setState("dead");
 		});
 	}
 
 	update() {
-		if (!this.scene || !this.scene.sys.isActive()) return;
-		if (this.state === "dead") return;
+		// Lerp Position
+		if (this.targetX !== undefined && this.targetY !== undefined) {
+			const lerpFactor = 0.2; // je kleiner, desto langsamer
+			this.x += (this.targetX - this.x) * lerpFactor;
+			this.y += (this.targetY - this.y) * lerpFactor;
+		}
 
-		this.handleState();
-		this.animation.update();
-		this.network.update();
+		if (this.animation) this.animation.update();
 	}
 
-	handleState() {
-		if (this.state === "dead") return;
+	// ---- State Management ----
+	setState(newState) {
+		if (this.state === newState) return;
+		this.state = newState;
 
-		if (this.health / this.maxHealth < 0.2) {
-			this.state = "run";
-			this.moveAwayFromPlayer();
-			return;
-		}
-
-		if (this.targetPos) {
-			const dx = this.targetPos.x - this.x;
-			const dy = this.targetPos.y - this.y;
-
-			if (Math.abs(dx) < 2 && Math.abs(dy) < 2) {
-				this.setVelocity(0, 0);
-				this.state = "idle";
-				this.targetPos = null;
-				return;
-			}
-
-			this.state = "walk";
-			const angle = Math.atan2(dy, dx);
-			this.setVelocity(Math.cos(angle) * this.speed, Math.sin(angle) * this.speed);
-
-			if (Math.abs(dx) > Math.abs(dy)) {
-				this.lastDirection = dx > 0 ? "right" : "left";
-			} else {
-				this.lastDirection = dy > 0 ? "down" : "up";
-			}
-		} else {
-			this.state = "idle";
-			this.setVelocity(0, 0);
-		}
-	}
-
-	moveAwayFromPlayer() {
-		if (!this.scene.localPlayer) return;
-
-		const player = this.scene.localPlayer;
-		const dx = this.x - player.x;
-		const dy = this.y - player.y;
-
-		if (dx === 0 && dy === 0) return;
-
-		const angle = Math.atan2(dy, dx);
-		this.setVelocity(Math.cos(angle) * this.runSpeed, Math.sin(angle) * this.runSpeed);
-
-		if (Math.abs(dx) > Math.abs(dy)) {
-			this.lastDirection = dx > 0 ? "right" : "left";
-		} else {
-			this.lastDirection = dy > 0 ? "down" : "up";
-		}
-	}
-
-	chooseRandomTarget() {
-		this.targetPos = {
-			x: Phaser.Math.Between(100, 800),
-			y: Phaser.Math.Between(100, 600),
-		};
-	}
-
-	takeDamage(amount) {
-		if (this.state === "dead") return;
-
-		this.health -= amount;
-		this.scene.sound.play("sheepbleat");
-
-		// Bewegung stoppen
-		if (this.body) {
-			this.setVelocity(0, 0);
-			this.targetPos = null;
-		}
-
-		// ---------- HIT BOUNCE ----------
-		// leichter Rückstoß nach oben
-		this.scene.tweens.add({
-			targets: this,
-			y: this.y - 6,
-			duration: 80,
-			yoyo: true,
-			//	ease: "Quad.out",
-			ease: "Sine.out",
-		});
-
-		// ---------- HIT FLASH ----------
-		this.setTint(0xff0000);
-
-		// --------- LEBEND ---------
-		if (this.health > 0) {
-			this.scene.time.delayedCall(300, () => {
-				if (!this.scene || !this.body || this.state === "dead") return;
-				this.clearTint();
-			});
-			return;
-		}
-
-		// --------- TOD ---------
-		this.state = "dead";
-		this.clearTint();
-
-		if (this.moveEvent) this.moveEvent.remove(false);
-		if (this.body) {
+		if (newState === "dead") {
 			this.body.enable = false;
-			this.setVelocity(0, 0);
-		}
-
-		const deathAnimKey = `${this.type}_death`;
-
-		if (this.anims && this.scene.anims.exists(deathAnimKey)) {
-			this.anims.stop();
-			this.play(deathAnimKey, true);
-
-			this.once(Phaser.Animations.Events.ANIMATION_COMPLETE_KEY + deathAnimKey, () => {
-				socket.emit("world:item:spawn:request", {
-					resourceType: "sheep",
-					x: this.x,
-					y: this.y,
+			this.body.setVelocity(0, 0);
+			const deadAnimKey = `${this.spritekey}_dead`;
+			if (this.scene.anims.exists(deadAnimKey)) {
+				this.play(deadAnimKey, true);
+				this.animation.currentAnim = deadAnimKey;
+				this.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
+					socket.emit("world:item:spawn:request", {
+						resourceType: this.spritekey,
+						x: this.x,
+						y: this.y,
+					});
+					this.destroy();
 				});
+			} else {
 				this.destroy();
-			});
-		} else {
-			this.destroy();
+			}
 		}
+	}
+
+	// ---- Damage Handling ----
+	takeDamage(damage) {
+		socket.emit("animal:hit", this.id, damage);
+	}
+
+	onHit() {
+		this.setTint(0xff0000);
+		this.scene.sound.play("sheepbleat");
+		setTimeout(() => this.clearTint(), 100);
+	}
+
+	// ---- Server Synchronisation ----
+	syncFromServer(data) {
+		if (typeof data.x === "number") this.targetX = data.x;
+		if (typeof data.y === "number") this.targetY = data.y;
+		if (data.state) this.state = data.state;
+		if (data.last_direction) this.lastDirection = data.last_direction;
+		if (typeof data.currenthealth === "number") this.currentHealth = data.currenthealth;
+		if (data.followTarget !== undefined) this.followTarget = data.followTarget;
+
+		if (this.animation) this.animation.update();
+	}
+
+	// ---- Toggle Follow Funktion ----
+	toggleFollow(playerId) {
+		socket.emit("animal:state:change", this.id, playerId);
 	}
 }
 
@@ -189,50 +126,16 @@ class AnimalAnimationController {
 	}
 
 	update() {
-		if (this.animal.state === "dead") return;
+		if (!this.animal.active || this.animal.state === "dead") return;
 
-		const animKey = this.getAnimationKey();
-		if (animKey && animKey !== this.currentAnim) {
+		let animKey = `${this.animal.spritekey}_${this.animal.state}_${this.animal.lastDirection}`;
+		if (!this.scene.anims.exists(animKey)) {
+			animKey = `${this.animal.spritekey}_idle_${this.animal.lastDirection}`;
+		}
+
+		if (animKey !== this.currentAnim) {
 			this.animal.play(animKey, true);
 			this.currentAnim = animKey;
 		}
-	}
-
-	getAnimationKey() {
-		const { state, lastDirection, type } = this.animal;
-
-		switch (state) {
-			case "idle":
-				return `${type}_idle_${lastDirection}`;
-			case "walk":
-				return `${type}_walk_${lastDirection}`;
-			case "run":
-				return `${type}_run_${lastDirection}`;
-			case "attack":
-				return `${type}_attack_${lastDirection}`;
-			default:
-				return null;
-		}
-	}
-}
-
-// ------------------------------
-// Networking
-// ------------------------------
-class AnimalNetworking {
-	constructor(animal) {
-		this.animal = animal;
-	}
-
-	update() {
-		if (this.animal.state === "dead") return;
-
-		socket.emit("animal:update", {
-			id: this.animal.id,
-			x: this.animal.x,
-			y: this.animal.y,
-			anim: this.animal.animation.currentAnim,
-			health: this.animal.health,
-		});
 	}
 }

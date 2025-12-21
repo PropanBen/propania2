@@ -127,6 +127,10 @@ export default class PlayerInteractionController {
 			socket.emit("inventory:open:request", this.actionTarget.id);
 		}
 
+		if (type === "interact" && this.actionTarget instanceof Animal && this.actionTarget.type === "peaceful") {
+			this.actionTarget.toggleFollow(this.player.id);
+		}
+
 		if (type === "attack") {
 			const direction = this.player.lastDirection;
 			const animKey = `attack_${direction}`;

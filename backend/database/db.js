@@ -312,3 +312,48 @@ export async function loadWorldResources() {
 		};
 	});
 }
+
+// Animals
+
+export async function loadAnimals() {
+	const rows = await query(
+		`SELECT 
+			id,
+			type,
+			spritekey,
+			x,
+			y,
+			health,
+			currenthealth,
+			state,
+			last_direction,
+			alive
+		FROM animals
+		WHERE alive = 1`
+	);
+
+	return rows.map((r) => ({
+		id: Number(r.id), // BIGINT → Number
+		type: r.type,
+		spritekey: r.spritekey,
+
+		x: Number(r.x),
+		y: Number(r.y),
+
+		health: Number(r.health),
+		currenthealth: Number(r.currenthealth),
+
+		state: r.state,
+		last_direction: r.last_direction,
+
+		alive: !!r.alive,
+	}));
+}
+
+export async function DeleteAnimal(animal_id) {
+	try {
+		await query("DELETE FROM animals WHERE id = ?", [animal_id]);
+	} catch (err) {
+		console.error("Fehler beim Löschen des Tieres aus DB:", err);
+	}
+}

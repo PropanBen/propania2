@@ -12,3 +12,8 @@ input {
 * {
 	font-family: "PerryGothic", sans-serif;
 }
+
+canvas {
+	image-rendering: pixelated;
+	image-rendering: crisp-edges;
+}

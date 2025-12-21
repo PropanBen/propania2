@@ -114,7 +114,7 @@ export default class UIScene extends Phaser.Scene {
 			// NPC-Inventar rechts
 			if (this.otherinventoryUI) this.otherinventoryUI.destroy();
 			this.otherinventoryUI = new InventoryUI(this, npcInventory);
-			this.otherinventoryUI.setPosition(this.inventoryUI.container.x, this.inventoryUI.container.y);
+			this.otherinventoryUI.setPosition(this.inventoryUI.container.x, this.inventoryUI.container.y + 300);
 			this.otherinventoryUI.container.setVisible(true);
 			this.otherinventoryUI.refresh();
 		});
@@ -140,6 +140,7 @@ export default class UIScene extends Phaser.Scene {
 			} finally {
 				if (this.scene.isActive("UIScene")) this.scene.stop("UIScene");
 				if (this.scene.isActive("GameScene")) this.scene.stop("GameScene");
+				socket.emit("playerlogout", "Player Logged out");
 				if (this.onLogout) this.onLogout();
 			}
 		});

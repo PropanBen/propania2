@@ -3,6 +3,7 @@ export const gameConfig = {
 	width: window.innerWidth,
 	height: window.innerHeight,
 	pixelArt: true,
+	antialias: true,
 	roundPixels: true,
 	backgroundColor: "#319ddb",
 	parent: "game-container",
