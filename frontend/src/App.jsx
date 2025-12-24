@@ -47,7 +47,7 @@ function App() {
 
 	return (
 		<div>
-			<div id="game-container" style={{ width: "100vw", height: "100vh" }}></div>
+			<div id="game-container" style={{ width: "100%", height: "100%" }}></div>
 		</div>
 	);
 }

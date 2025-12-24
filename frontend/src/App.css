@@ -1,21 +1,181 @@
 @font-face {
-	font-family: "PerryGothic";
-	src: url("./assets/fonts/PERRYGOT.TTF") format("truetype");
+	font-family: "Pixel Code";
+	src: url("./assets/fonts/PixelCode.ttf") format("truetype");
 	font-weight: normal;
 	font-style: normal;
 }
 
+html,
+body {
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	overflow: hidden; /* <-- DAS ist entscheidend */
+	touch-action: none;
+}
+
+body {
+	min-height: 100vh;
+	max-height: 100vh;
+}
+
 input {
-	font-family: "Arial" !important;
+	font-family: "Pixel Code" !important;
 }
 
 * {
-	font-family: "PerryGothic", sans-serif;
+	font-family: "Pixel Code", sans-serif;
+}
+
+p {
+	font-weight: bold;
+	text-shadow: -1px -1px 0 #ffffff, 1px -1px 0 #ffffff, -1px 1px 0 #ffffff, 1px 1px 0 #ffffff; /* weißer Rand */
+}
+
+span {
+	font-weight: bold;
+	text-shadow: -1px -1px 0 #ffffff, 1px -1px 0 #ffffff, -1px 1px 0 #ffffff, 1px 1px 0 #ffffff; /* weißer Rand */
+}
+
+#game-container {
+	width: 100vw;
+	height: 100vh;
+	overflow: hidden;
+}
+
+#game-container {
+	height: 100dvh; /* Dynamic Viewport Height */
+}
+
+#root {
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
 }
 
 canvas {
+	display: block;
+	width: 100vw !important;
+	height: 100vh !important;
 	image-rendering: pixelated;
 	image-rendering: crisp-edges;
+}
+
+/*uiscene.js */
+
+#ui-root {
+	position: fixed;
+	inset: 0; /* ersetzt left/top/width/height */
+	overflow: hidden; /* <-- extrem wichtig */
+	pointer-events: none;
+}
+
+#ui-root img {
+	width: 50px;
+	height: 50px;
+	pointer-events: auto;
+}
+
+/* ------------------------------
+   STATS
+------------------------------ */
+#container-stats {
+	position: fixed;
+	left: 20px;
+	top: 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+#container-stats div {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 8px;
+}
+
+#container-stats img {
+	/* Größe skaliert mit Viewport */
+	width: clamp(40px, 8vw, 70px);
+	height: clamp(40px, 8vw, 70px);
+	object-fit: contain;
+	image-rendering: pixelated;
+	cursor: pointer;
+}
+
+#container-stats div span {
+	/* Schriftgröße skaliert responsive */
+	font-size: clamp(12px, 2vw, 20px);
+	color: #000000; /* schwarz */
+}
+
+#container-logout {
+	position: fixed;
+	right: 20px;
+	top: 20px;
+}
+
+/* ------------------------------
+   LOGOUT BUTTONS
+------------------------------ */
+
+#container-logout img {
+	width: clamp(40px, 10vw, 80px);
+	height: clamp(40px, 10vw, 80px);
+	object-fit: contain;
+	image-rendering: pixelated; /* wichtig für Pixel-Art */
+	image-rendering: crisp-edges; /* Backup für Browser */
+	cursor: pointer;
+}
+
+/* ------------------------------
+   CONTROL BUTTONS
+------------------------------ */
+#container-control-buttons {
+	position: fixed;
+	right: 20px;
+	bottom: 300px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+#container-control-buttons img {
+	width: clamp(40px, 10vw, 80px);
+	height: clamp(40px, 10vw, 80px);
+	object-fit: contain;
+	image-rendering: pixelated;
+	cursor: pointer;
+}
+
+/* ------------------------------
+   ACTION BUTTONS
+------------------------------ */
+#container-action-buttons {
+	position: fixed;
+	right: 20px;
+	bottom: 20px;
+
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	grid-template-rows: repeat(2, 1fr);
+	gap: 16px;
+
+	/* Responsive Gesamtgröße */
+	width: clamp(120px, 40vw, 220px);
+	height: clamp(120px, 40vw, 220px);
+
+	pointer-events: auto;
+}
+
+#container-action-buttons img {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+	image-rendering: pixelated;
+	cursor: pointer;
 }
 
 /* inventory.css */

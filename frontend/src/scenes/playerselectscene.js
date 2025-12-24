@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import logoutImg from "../assets/ui/logout.png";
+import Functions from "../assets/utils/functions.js";
 
 export default class PlayerSelectScene extends Phaser.Scene {
 	constructor(data) {
@@ -16,11 +17,9 @@ export default class PlayerSelectScene extends Phaser.Scene {
 
 	create() {
 		this.add.text(window.innerWidth / 2 - 200, window.innerHeight / 2 - 300, "Select your Player", {
-			fontSize: "46px",
-			color: "#ffffff",
-			fontFamily: "Arial",
-			backgroundColor: "#000000",
-			padding: { x: 8, y: 4 },
+			color: "#ffffffff",
+			fontFamily: "Pixel Code",
+			fontSize: "36px",
 		});
 
 		const logoutbtn = this.add
@@ -72,12 +71,12 @@ export default class PlayerSelectScene extends Phaser.Scene {
 
 			this.renderPlayerList();
 		} catch (err) {
-			console.error("Fehler in loadPlayers:", err);
+			console.error("Error loadPlayers:", err);
 			this.add
-				.text(window.innerWidth / 2 - 200, window.innerHeight / 2 - 300, "Fehler beim Laden der Spieler!", {
+				.text(window.innerWidth / 2 - 200, window.innerHeight / 2 - 300, "Error when loading the players", {
 					fontSize: "40px",
 					color: "#ff0000",
-					fontFamily: "Arial",
+					fontFamily: "Pixel Code",
 				})
 				.setInteractive();
 		}
@@ -91,7 +90,7 @@ export default class PlayerSelectScene extends Phaser.Scene {
 				.text(window.innerWidth / 2 - 200, window.innerHeight / 2 + y - 300, `${player.name}`, {
 					fontSize: "40px",
 					color: "#ffffffff",
-					fontFamily: "Arial",
+					fontFamily: "Pixel Code",
 					backgroundColor: "#748800ff",
 					padding: { x: 6, y: 4 },
 				})
@@ -103,7 +102,7 @@ export default class PlayerSelectScene extends Phaser.Scene {
 				// Alle anderen resetten
 				this.children.list.forEach((child) => {
 					if (child.setStyle) {
-						child.setStyle({ backgroundColor: "#000000ff" });
+						child.setStyle({ backgroundColor: "#748800ff" });
 					}
 				});
 
@@ -121,8 +120,9 @@ export default class PlayerSelectScene extends Phaser.Scene {
 		}
 
 		this.startButton = this.add
-			.text(window.innerWidth / 2 - 200, window.innerHeight / 2 + 220, "▶ Spiel starten", {
+			.text(window.innerWidth / 2 - 200, window.innerHeight / 2 + 220, "▶ Start Game", {
 				fontSize: "40px",
+				fontFamily: "Pixel Code",
 				color: "#ffffff",
 				backgroundColor: "#0000ff",
 				padding: { x: 10, y: 6 },
@@ -142,7 +142,7 @@ export default class PlayerSelectScene extends Phaser.Scene {
 		// Textfeld
 		const inputStyle = {
 			fontSize: "40px",
-			fontFamily: "Arial",
+			fontFamily: "Pixel Code",
 			color: "#000000",
 			backgroundColor: "#ffffff",
 			padding: { x: 6, y: 4 },
@@ -152,16 +152,17 @@ export default class PlayerSelectScene extends Phaser.Scene {
         <input
   type="text"
   id="playerName"
-  placeholder="Neuen Spieler erstellen"
+  placeholder="Create new Player"
   maxlength="20"
-  style="font-family: Arial; height: 40px;"
+  style="font-family: Pixel Code; height: 40px;"
 />
     `);
 
 		// Button erstellen
 		this.createButton = this.add
-			.text(window.innerWidth / 2 - 200, window.innerHeight / 2 + 150, "Erstellen", {
+			.text(window.innerWidth / 2 - 200, window.innerHeight / 2 + 150, "Create new Player", {
 				fontSize: "40px",
+				fontFamily: "Pixel Code",
 				color: "#ffffff",
 				backgroundColor: "#008000",
 				padding: { x: 6, y: 4 },
@@ -172,8 +173,8 @@ export default class PlayerSelectScene extends Phaser.Scene {
 			const inputEl = document.getElementById("playerName");
 			const playerName = inputEl.value.trim();
 
-			if (!playerName) return alert("Name darf nicht leer sein!");
-			if (!/^[A-Za-z\s]{1,20}$/.test(playerName)) return alert("Nur Buchstaben und Leerzeichen erlaubt, max. 20 Zeichen!");
+			if (!playerName) return alert("Name can not be empty !");
+			if (!/^[A-Za-z\s]{1,20}$/.test(playerName)) return alert("Only Letters and blanks allowed, max. 20 Chars!");
 
 			try {
 				const API_URL = import.meta.env.PROD
@@ -189,15 +190,15 @@ export default class PlayerSelectScene extends Phaser.Scene {
 
 				if (!res.ok) {
 					const errorText = await res.text();
-					return alert(`Fehler: ${errorText}`);
+					return alert(`Error: ${errorText}`);
 				}
 
-				alert("Spieler erstellt!");
+				alert("Player created!");
 				inputEl.value = "";
 				this.loadPlayers(); // Liste aktualisieren
 			} catch (err) {
-				console.error("Fehler beim Spieler erstellen:", err);
-				alert("Serverfehler beim Spieler erstellen.");
+				console.error("Error creating new player:", err);
+				alert("Server error creating new player.");
 			}
 		});
 	}
