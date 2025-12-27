@@ -1,5 +1,4 @@
 import { socket } from "../socket.js";
-import Functions from "../assets/utils/functions.js";
 import InventoryUI from "../entities/inventoryUI.js";
 import Inventory from "../entities/inventory.js";
 import API_BASE from "../config/api.js";
@@ -48,6 +47,7 @@ export default class UIScene extends Phaser.Scene {
 			this.bindButton("btn-e", () => player.interaction?.performAction("interact"));
 			this.bindButton("btn-f", () => player.interaction?.performAction("attack"));
 			this.bindButton("btn-q", () => player.interaction?.performAction("drop"));
+			this.bindButton("btn-p", () => player.ProfessionsMenu?.toggle());
 			this.bindButton("btn-inventory", () => this.toggleInventoryUI());
 		});
 
@@ -107,9 +107,6 @@ export default class UIScene extends Phaser.Scene {
 		// Logout Button
 		this.bindButton("btn-logout", async () => {
 			try {
-				const API_BASE = import.meta.env.PROD
-					? `${import.meta.env.VITE_API_PROTOKOLL}://${import.meta.env.VITE_API_URL}`
-					: `${import.meta.env.VITE_API_PROTOKOLL}://${import.meta.env.VITE_HOST_SERVER}:${import.meta.env.VITE_API_PORT}`;
 				await fetch(`${API_BASE}/api/auth/logout`, { method: "POST", credentials: "include" });
 			} finally {
 				this.cleanupHTML();
@@ -277,6 +274,7 @@ export default class UIScene extends Phaser.Scene {
 				<img id="btn-e" src="/src/assets/ui/e.png" class="big"/>
 				<img id="btn-f" src="/src/assets/ui/f.png" class="big"/>
 				<img id="btn-q" src="/src/assets/ui/q.png" />
+				<img id="btn-p" src="/src/assets/ui/p.png" />
 				<img id="btn-inventory" src="/src/assets/ui/inventory.png" />
 			</div>
 			<div id="container-logout">

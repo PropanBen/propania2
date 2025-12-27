@@ -1,5 +1,5 @@
 // inventoryUI.js
-import itemsList from "./itemslist.js";
+import { itemRegistry } from "./itemregistry.js";
 
 export default class InventoryUI {
 	constructor(scene, inventory, layout = {}) {
@@ -224,7 +224,7 @@ export default class InventoryUI {
 	}
 
 	showPopup(item) {
-		const def = itemsList.find((i) => i.key === item.key) || {};
+		const def = itemRegistry.get(item.item_id);
 		this.popupDescription.textContent = def.description || "No description";
 		this.popupPrice.textContent = "Price: " + (def.price ?? "-");
 		this.popup.style.display = "flex";

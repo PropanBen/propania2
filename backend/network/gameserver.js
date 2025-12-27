@@ -19,9 +19,12 @@ import {
 	loadAnimals,
 	DeleteAnimal,
 } from "../database/db.js";
+import { loadPlayerProfessions, unlockProfession, addProfessionExp } from "../database/professions.js";
+
 import Functions from "../utils/functions.js";
 import resourcesDrops from "../entities/resourcedrops.js";
 import itemsList from "../entities/itemlist.js";
+import professionsData from "../entities/professionsData.js";
 
 export function initGameServer(io) {
 	const players = {};
@@ -232,6 +235,10 @@ export function initGameServer(io) {
 			}
 		});
 
+		socket.on("itemslist:request", () => {
+			socket.emit("itemslist:update", itemsList);
+		});
+
 		socket.on("inventory:item:buy", async (npcId, itemId, quantity) => {
 			const player = players[socket.id];
 			const npcInventory = npcInventories.get(npcId);
@@ -244,6 +251,7 @@ export function initGameServer(io) {
 
 			// Spieler zuerst prüfen
 			const result = await PlayerRemoveMoney(player.id, totalPrice);
+			player.money = moneyResult.newBalance;
 
 			if (!result.success) {
 				io.emit("Show:Dialogbox", "Not enough money. Current balance: " + result.newBalance);
@@ -517,5 +525,51 @@ export function initGameServer(io) {
 				});
 			}
 		});
+
+		// Professions
+		socket.on("professions:load", () => {
+			socket.emit("professions:loaded", professionsData);
+		});
+
+		socket.on("professions:player:load", async () => {
+			const player = players[socket.id];
+			const pp = await loadPlayerProfessions(player.id);
+			socket.emit("professions:player:loaded", pp);
+		});
+
+		socket.on("profession:unlock", async (profid) => {
+			const player = players[socket.id];
+			if (!player) return;
+
+			const profession = professionsData[profid];
+			if (!profession) return;
+
+			const moneyResult = await PlayerRemoveMoney(player.id, profession.unlockCost);
+			if (!moneyResult.success) {
+				socket.emit("Show:Dialogbox", "Not enough money");
+				return;
+			}
+			player.money = moneyResult.newBalance;
+
+			const result = await unlockProfession(player.id, profid);
+			if (!result.success) {
+				socket.emit("Show:Dialogbox", result.message);
+				return;
+			}
+
+			// ✅ NEU: Player-Professions neu laden & senden
+			const updatedProfessions = await loadPlayerProfessions(player.id);
+			socket.emit("professions:player:loaded", updatedProfessions);
+
+			socket.emit("player:money:update", moneyResult.newBalance);
+			socket.emit("Play:Sound:Coin");
+			socket.emit("Show:Dialogbox", result.message);
+		});
+
+		socket.on("professions:open:request", (npc_id) => {
+			socket.emit("professions:open:true");
+		});
+
+		// End of IO Connection
 	});
 }

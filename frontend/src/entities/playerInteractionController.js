@@ -123,8 +123,18 @@ export default class PlayerInteractionController {
 		// wenn bereits in Aktion, nichts tun
 		if (this.player.state === "action") return;
 
-		if (type === "interact" && this.actionTarget instanceof NPC) {
+		if (
+			type === "interact" &&
+			this.actionTarget instanceof NPC &&
+			this.actionTarget.type === "trader" &&
+			this.actionTarget.id !== "start_merchant"
+		) {
 			socket.emit("inventory:open:request", this.actionTarget.id);
+		}
+
+		if (type === "interact" && this.actionTarget instanceof NPC && this.actionTarget.id === "start_merchant") {
+			this.actionTarget.NPCMenu.toggle();
+			//socket.emit("professions:open:request", this.actionTarget.id);
 		}
 
 		if (type === "interact" && this.actionTarget instanceof Animal && this.actionTarget.type === "peaceful") {

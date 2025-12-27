@@ -1,13 +1,13 @@
 // src/scenes/gamescene.js
 import Phaser from "phaser";
 import { socket } from "../socket.js";
-
 import Player from "../entities/player.js";
 import NPC from "../entities/npc.js";
 import Animal from "../entities/animal.js";
 import Item from "../entities/items.js";
 import Resource from "../entities/resources.js";
 import WorldObject from "../entities/worldobjects.js";
+import { itemRegistry } from "../entities/itemregistry.js";
 
 import { preloadAssets } from "../assets/utils/gamesceneassetloader.js";
 import { registerPlayerAnimations, registerAnimalAnimations } from "../assets/utils/animations.js";
@@ -19,6 +19,7 @@ export default class GameScene extends Phaser.Scene {
 		this.resources = {};
 		this.worldItems = {};
 		this.animals = {};
+		this.professions = {};
 	}
 
 	init(data) {
@@ -50,9 +51,9 @@ export default class GameScene extends Phaser.Scene {
 		mapbg.setDepth(-1);
 
 		const map = this.make.tilemap({ key: "map" });
-		const groundTiles = map.addTilesetImage("tileset_ground", "ground");
-
+		const groundTiles = map.addTilesetImage("Gras_Spritesheet", "ground");
 		const groundLayer = map.createLayer("ground", groundTiles, 0, 0);
+
 		groundLayer.setDepth(0);
 		//groundLayer.setRoundPixels(true);
 		this.groundLayer = groundLayer;
@@ -69,7 +70,7 @@ export default class GameScene extends Phaser.Scene {
 		this.physics.world.setBounds(-mapWidth / 2, -mapHeight / 2, mapWidth, mapHeight, true, true, true, true);
 
 		// Camera Bounds (wichtig!)
-		//this.cameras.main.setBounds(-mapWidth / 2, -mapHeight / 2, mapWidth, mapHeight);
+		//	this.cameras.main.setBounds(-mapWidth / 2, -mapHeight / 2, mapWidth, mapHeight);
 		this.cameras.main.roundPixels = true;
 		this.cameras.main.setRoundPixels(true);
 
@@ -79,6 +80,7 @@ export default class GameScene extends Phaser.Scene {
 		this.keyQ = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
 		this.keyI = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.I);
 		this.keyT = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.T);
+		this.keyP = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.P);
 
 		this.interactText = this.add
 			.text(0, 0, "[E] Pick up", {
@@ -143,6 +145,8 @@ export default class GameScene extends Phaser.Scene {
 			}
 		});
 
+		// World Items
+
 		socket.on("world:items:update", (itemData) => {
 			this.worldItems = {};
 			if (this.itemsGroup && !this.itemsGroup.destroyed) {
@@ -165,6 +169,10 @@ export default class GameScene extends Phaser.Scene {
 			item.destroy();
 		});
 
+		// Items Registry
+		socket.on("itemslist:update", (items) => {
+			itemRegistry.loadAll(items);
+		});
 		// ------------------------------
 		// Inventory Events
 		// ------------------------------
@@ -217,6 +225,16 @@ export default class GameScene extends Phaser.Scene {
 			animal.syncFromServer(data);
 		});
 
+		//Professions
+		socket.on("professions:loaded", (data) => {
+			this.professions = data;
+		});
+
+		socket.on("professions:player.loaded", (data) => {
+			this.localPlayer.ProfessionsMenu.playerprofessions = data;
+		});
+
+		// Dialogbox
 		socket.on("Show:Dialogbox", (text) => {
 			this.localPlayer.showDialog(text);
 		});
@@ -255,12 +273,16 @@ export default class GameScene extends Phaser.Scene {
 
 		// Load local player
 		socket.emit("playerJoin", this.playerData);
+		//Load Items Registry
+		socket.emit("itemslist:request");
 		//Load world items
 		socket.emit("world:items:load");
 		// Load Resources
 		socket.emit("world:resources:load");
 		// Load Animals
 		socket.emit("world:animals:load");
+		// Load Professions
+		socket.emit("professions:load");
 	}
 
 	update() {
@@ -281,6 +303,10 @@ export default class GameScene extends Phaser.Scene {
 		}
 		if (Phaser.Input.Keyboard.JustDown(this.keyT) && this.localPlayer) {
 			this.game.events.emit("toggleChat");
+		}
+
+		if (Phaser.Input.Keyboard.JustDown(this.keyP) && this.localPlayer) {
+			this.localPlayer.ProfessionsMenu.toggle();
 		}
 
 		this.animalGroup.getChildren().forEach((animal) => animal.update());

@@ -235,6 +235,7 @@ export async function loadInventoryByInventoryId(inventory_id) {
 			quantity: Number(r.quantity),
 			key: def?.key ?? null,
 			name: def?.name ?? null,
+			description: def?.description ?? null,
 		};
 	});
 

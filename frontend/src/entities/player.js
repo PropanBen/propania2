@@ -8,6 +8,7 @@ import PlayerCameraController from "./playerCameraController";
 import PlayerNetworking from "./playerNetworking";
 import Inventory from "./inventory";
 import InventoryUI from "./inventoryUI";
+import ProfessionsMenu from "./professionsmenu";
 
 export default class Player extends Phaser.Physics.Arcade.Sprite {
 	constructor(scene, playerInfo) {
@@ -77,6 +78,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 		//	this.interaction = new PlayerInteractionController(scene, this);
 		this.network = new PlayerNetworking(this);
 		this.inventory = new Inventory(this.inventory_id, "player");
+		this.ProfessionsMenu = new ProfessionsMenu(scene, this);
 		if (this.inventory) this.inventoryUI = new InventoryUI(this.scene, this.inventory);
 
 		if (this.isLocal()) {

@@ -1,3 +1,5 @@
+import NPCMenu from "./npcmenu";
+
 export default class NPC extends Phaser.Physics.Arcade.Sprite {
 	constructor(scene, x, y, texture, name, type, id) {
 		super(scene, x, y, texture);
@@ -6,6 +8,7 @@ export default class NPC extends Phaser.Physics.Arcade.Sprite {
 		this.id = id;
 		this.name = name;
 		this.type = type;
+		this.NPCMenu = null;
 
 		scene.add.existing(this);
 		scene.physics.add.existing(this);
@@ -28,5 +31,7 @@ export default class NPC extends Phaser.Physics.Arcade.Sprite {
 			})
 			.setOrigin(0.5)
 			.setDepth(1001);
+
+		this.NPCMenu = new NPCMenu(this.scene, this);
 	}
 }

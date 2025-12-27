@@ -40,15 +40,13 @@ export function preloadAssets(scene) {
 	const mapUrl = new URL("../map/maps/map.json", import.meta.url).href;
 	scene.load.tilemapTiledJSON("map", mapUrl);
 
-	const groundUrl = new URL("../map/images/Ground.png", import.meta.url).href;
-	scene.load.image("ground", groundUrl);
+	const groundUrl = new URL("../map/images/tileset_ground.png", import.meta.url).href;
+	scene.load.image("ground", groundUrl); */
 
-	*/
-
-	const mapUrl = new URL("../map/maps/map.json", import.meta.url).href;
+	const mapUrl = new URL("../map/map.json", import.meta.url).href;
 	scene.load.tilemapTiledJSON("map", mapUrl);
 
-	const groundUrl = new URL("../map/images/tileset_ground.png", import.meta.url).href;
+	const groundUrl = new URL("../map/images/Gras_Spritesheet.png", import.meta.url).href;
 	scene.load.image("ground", groundUrl);
 
 	// Items

@@ -136,7 +136,7 @@ canvas {
 #container-control-buttons {
 	position: fixed;
 	right: 20px;
-	bottom: 300px;
+	bottom: 25%;
 	display: flex;
 	flex-direction: column;
 	gap: 10px;
@@ -159,7 +159,7 @@ canvas {
 	bottom: 20px;
 
 	display: grid;
-	grid-template-columns: repeat(2, 1fr);
+	grid-template-columns: repeat(3, 1fr);
 	grid-template-rows: repeat(2, 1fr);
 	gap: 16px;
 
@@ -209,7 +209,7 @@ canvas {
 }
 
 .inventory-close {
-	font-size: 1.2rem;
+	font-size: 2.2rem;
 	font-weight: bold;
 	background: transparent;
 	border: none;
@@ -384,4 +384,215 @@ canvas {
 	background: rgba(255, 255, 255, 0.6);
 	left: 40px;
 	top: 40px;
+}
+
+/* NPC Menü Container */
+.npc-ui {
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	background: #deb887;
+	border: 3px solid #000;
+	display: flex;
+	flex-direction: column;
+	padding: 20px;
+	box-sizing: border-box;
+	z-index: 9999;
+	border-radius: 15px;
+	overflow-y: auto;
+	max-height: 90%;
+	width: 90%;
+	max-width: 400px;
+	box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+	font-family: "Segoe UI", sans-serif;
+}
+
+/* Header */
+.npc-header {
+	text-align: center;
+	font-size: 1.5rem;
+	font-weight: bold;
+	margin-bottom: 15px;
+	color: #2c1a00;
+	text-shadow: 1px 1px 0 #fff;
+}
+
+/* Button Container */
+.npc-buttons {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	width: 100%;
+}
+
+.npc-close {
+	position: fixed;
+	top: 0;
+	right: 0;
+	font-size: 2.2rem;
+	font-weight: bold;
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	color: #ff4444;
+}
+
+/* Buttons */
+.npc-buttons button {
+	padding: 12px 20px;
+	font-size: 1.1rem;
+	font-weight: bold;
+	text-shadow: -1px -1px 0 #ffffff, 1px -1px 0 #ffffff, -1px 1px 0 #ffffff, 1px 1px 0 #ffffff;
+	background: #8b5e3c;
+	color: #000000;
+	border: 2px solid #000;
+	border-radius: 10px;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	text-align: center;
+}
+
+.npc-buttons button:hover {
+	background: #a67850;
+	transform: scale(1.05);
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Container des Professions-Menüs */
+.professions-menu {
+	position: fixed; /* fixed statt absolute für bessere mobile Positionierung */
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	background: #deb887;
+	padding: 30px;
+	border-radius: 16px;
+	color: #000;
+	display: none;
+	width: 600px; /* größerer Standard */
+	max-width: 95%; /* mobil responsiv */
+	max-height: 90vh; /* Höhe max. 90% des Viewports */
+	overflow-y: auto; /* scrollbar, wenn Inhalt zu groß */
+	box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+	z-index: 10000;
+}
+
+/* Header */
+.professions-header {
+	font-size: 2rem;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 20px;
+}
+
+/* Grid der Profession-Buttons */
+.professions-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); /* flexibel */
+	gap: 15px;
+}
+
+/* Profession-Button */
+.profession-btn {
+	background: #a67850;
+	border: 2px solid #000;
+	border-radius: 10px;
+	color: #000000;
+	padding: 15px;
+	text-align: center;
+	cursor: pointer;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	transition: transform 0.2s, border-color 0.2s;
+}
+
+.profession-btn:hover {
+	border-color: gold;
+	transform: scale(1.05);
+}
+
+/* Icon im Button */
+.profession-icon {
+	width: 100px;
+	height: 100px;
+	margin-bottom: 10px;
+	object-fit: contain;
+}
+
+/* Name & Kosten */
+.profession-name {
+	font-size: 1.5rem;
+	font-weight: bold;
+	margin-bottom: 5px;
+}
+
+.profession-cost-container {
+	width: 100%;
+	display: flex;
+	flex-direction: row;
+}
+
+.profession-cost {
+	font-size: 2.2rem;
+	color: #000000;
+}
+
+.professions-close {
+	position: fixed;
+	top: 0;
+	right: 0;
+	font-size: 2.2rem;
+	font-weight: bold;
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	color: #ff4444;
+}
+
+.profession-btn.owned {
+	background-color: #888;
+	border-color: rgb(0, 0, 0);
+	cursor: default;
+	opacity: 0.8;
+}
+
+.profession-popup {
+	position: fixed;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.6);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 9999;
+}
+
+.popup-content {
+	background: #1e1e1e;
+	color: white;
+	padding: 20px;
+	width: 360px;
+	border-radius: 8px;
+}
+
+.popup-content h2 {
+	margin-top: 0;
+}
+
+.buy-btn {
+	margin-top: 10px;
+	padding: 8px;
+	width: 100%;
+}
+
+.close-btn {
+	margin-top: 10px;
+	width: 100%;
+}
+
+.propancoin {
+	width: 32px;
+	height: 32px;
 }

@@ -1,7 +1,6 @@
 // === Resource.js ===
 import Phaser from "phaser";
 import { socket } from "../socket";
-import itemsList from "./itemslist";
 
 export default class Resource extends Phaser.Physics.Arcade.Sprite {
 	constructor(scene, resource) {

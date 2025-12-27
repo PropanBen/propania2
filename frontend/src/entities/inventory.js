@@ -1,4 +1,3 @@
-import itemsList from "../entities/itemslist.js";
 import { socket } from "../socket.js";
 
 export default class Inventory {
@@ -7,7 +6,6 @@ export default class Inventory {
 		this.type = type;
 		this.capacity = null;
 		this.items = [];
-		this.itemsList = itemsList;
 		this.isOpen = false;
 	}
 
@@ -71,7 +69,7 @@ export default class Inventory {
 			key: item.key,
 			name: item.name,
 			quantity: item.quantity,
-			description: this.itemsList.find((i) => i.key === item.key)?.description ?? "",
+			description: item.description,
 		}));
 	}
 

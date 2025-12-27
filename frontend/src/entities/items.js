@@ -1,10 +1,10 @@
 import Phaser from "phaser";
-import itemsList from "../entities/itemslist.js";
+import { itemRegistry } from "./itemregistry.js";
 
 export default class Item extends Phaser.Physics.Arcade.Sprite {
 	constructor(scene, info) {
 		// Suche Item in der Liste, um den Frame zu erhalten
-		const itemData = itemsList.find((item) => item.key === info.key);
+		const itemData = itemRegistry.get(info.item_id);
 
 		if (!itemData) {
 			console.warn(`Item key "${info.key}" nicht in itemslist.js gefunden.`);
