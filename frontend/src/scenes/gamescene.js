@@ -6,6 +6,7 @@ import NPC from "../entities/npc.js";
 import Animal from "../entities/animal.js";
 import Item from "../entities/items.js";
 import Resource from "../entities/resources.js";
+import Building from "../entities/buildings.js";
 import WorldObject from "../entities/worldobjects.js";
 import { itemRegistry } from "../entities/itemregistry.js";
 
@@ -42,6 +43,9 @@ export default class GameScene extends Phaser.Scene {
 		this.animalGroup = this.physics.add.group();
 		this.itemsGroup = this.physics.add.staticGroup();
 		this.resourcesGroup = this.physics.add.staticGroup();
+		this.buildingsGroup = this.physics.add.staticGroup();
+		this.wallsGroup = this.physics.add.staticGroup();
+		this.triggerGroup = this.physics.add.staticGroup();
 		this.interactablesGroup = this.physics.add.staticGroup();
 		this.worldobjectsGroup = this.physics.add.staticGroup();
 
@@ -73,6 +77,16 @@ export default class GameScene extends Phaser.Scene {
 		//	this.cameras.main.setBounds(-mapWidth / 2, -mapHeight / 2, mapWidth, mapHeight);
 		this.cameras.main.roundPixels = true;
 		this.cameras.main.setRoundPixels(true);
+
+		// Buildings
+		const woodhouse = new Building(this, -400, 800, {
+			id: 1,
+			type: "woodhouse",
+		});
+
+		// Collider zwischen Spieler und Gebäude
+		this.physics.add.collider(this.playerGroup, woodhouse.wallCollider);
+		this.physics.add.collider(this.playerGroup, woodhouse.doorCollider);
 
 		// Input keys
 		this.keyE = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
@@ -326,7 +340,24 @@ export default class GameScene extends Phaser.Scene {
 		this.physics.add.collider(player, this.npcGroup);
 		this.physics.add.collider(player, this.animalGroup);
 		this.physics.add.collider(player, this.resourcesGroup);
+		this.physics.add.collider(player, this.wallsGroup);
 		this.physics.add.collider(player, this.worldobjectsGroup);
+
+		this.physics.add.overlap(
+			player,
+			this.triggerGroup,
+			(player, trigger) => {
+				console.log("trigger");
+				const building = trigger.building;
+				if (trigger.name === "insideTrigger" && building.setState !== "inside") building.setState("inside");
+				if (trigger.name === "outsideTrigger" && building.setState !== "dooropen" && building.isDoorOpen === true)
+					building.setState("dooropen");
+				if (trigger.name === "outsideTrigger" && building.setState !== "standard" && building.isDoorOpen === false)
+					building.setState("standard");
+			},
+			null,
+			this
+		);
 
 		if (isLocal) {
 			this.localPlayer = player;
@@ -391,6 +422,7 @@ export default class GameScene extends Phaser.Scene {
 			...this.animalGroup.getChildren(),
 			...this.itemsGroup.getChildren(),
 			...this.resourcesGroup.getChildren(),
+			...this.buildingsGroup.getChildren(),
 			...this.worldobjectsGroup.getChildren(),
 		].filter((s) => s && s.active && s.body);
 

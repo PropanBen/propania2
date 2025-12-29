@@ -47,7 +47,10 @@ export default class UIScene extends Phaser.Scene {
 			this.bindButton("btn-e", () => player.interaction?.performAction("interact"));
 			this.bindButton("btn-f", () => player.interaction?.performAction("attack"));
 			this.bindButton("btn-q", () => player.interaction?.performAction("drop"));
-			this.bindButton("btn-p", () => player.ProfessionsMenu?.toggle());
+			this.bindButton("btn-p", () => {
+				player.ProfessionsMenu.buyinglocked = true;
+				player.ProfessionsMenu?.toggle();
+			});
 			this.bindButton("btn-inventory", () => this.toggleInventoryUI());
 		});
 

@@ -2,6 +2,7 @@ import Item from "./items.js";
 import Resource from "./resources.js";
 import Animal from "./animal.js";
 import NPC from "./npc.js";
+import Building from "./buildings.js";
 import { socket } from "../socket.js";
 
 export default class PlayerInteractionController {
@@ -39,7 +40,8 @@ export default class PlayerInteractionController {
 		this.interactables = this.scene.interactablesGroup || this.scene.physics.add.group();
 		this.animals = this.scene.animalGroup;
 		this.npcs = this.scene.npcGroup;
-
+		this.walls = this.scene.wallsGroup;
+		this.insideTriggers = this.scene.insideTriggerGroup;
 		// Collision detection via physics
 		if (this.actionzone && this.interactables) {
 			this.scene.physics.add.overlap(this.actionzone, this.interactables, (zone, object) => {
@@ -55,6 +57,12 @@ export default class PlayerInteractionController {
 
 		if (this.actionzone && this.npcs) {
 			this.scene.physics.add.overlap(this.actionzone, this.npcs, (zone, object) => {
+				this.actionTarget = object;
+			});
+		}
+
+		if (this.actionzone && this.scene.triggerGroup) {
+			this.scene.physics.add.overlap(this.actionzone, this.scene.triggerGroup, (zone, object) => {
 				this.actionTarget = object;
 			});
 		}
@@ -90,12 +98,18 @@ export default class PlayerInteractionController {
 		}
 
 		// Überprüfe ob actionTarget noch innerhalb der Zone ist
-		if (this.actionTarget) {
+		if (this.actionTarget && this.actionzone && this.actionTarget.body) {
+			const padding = 8;
+
 			const zoneBounds = this.actionzone.getBounds();
-			const targetBounds = this.actionTarget.getBounds();
+			Phaser.Geom.Rectangle.Inflate(zoneBounds, padding, padding);
+
+			// Body-Bounds vom Physics-Body holen
+			const targetBody = this.actionTarget.body;
+			const targetBounds = new Phaser.Geom.Rectangle(targetBody.x, targetBody.y, targetBody.width, targetBody.height);
 
 			if (!Phaser.Geom.Intersects.RectangleToRectangle(zoneBounds, targetBounds)) {
-				this.actionTarget = null; // außerhalb -> löschen
+				this.actionTarget = null;
 			}
 		}
 	}
@@ -122,6 +136,10 @@ export default class PlayerInteractionController {
 	performAction(type) {
 		// wenn bereits in Aktion, nichts tun
 		if (this.player.state === "action") return;
+
+		if (type === "interact" && this.actionTarget && this.actionTarget.building) {
+			this.actionTarget.building.openDoor();
+		}
 
 		if (
 			type === "interact" &&

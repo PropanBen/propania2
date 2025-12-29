@@ -64,6 +64,17 @@ export function preloadAssets(scene) {
 	const RockUrl = new URL("../resources/rock.png", import.meta.url).href;
 	scene.load.image("rock", RockUrl);
 
+	// Buildings
+
+	const woodhouse_standardURL = new URL("../buildings/woodhouse.png", import.meta.url).href;
+	scene.load.image("woodhouse", woodhouse_standardURL);
+
+	const woodhouse_insideURL = new URL("../buildings/woodhouse_inside.png", import.meta.url).href;
+	scene.load.image("woodhouse_inside", woodhouse_insideURL);
+
+	const woodhouse_dooropenURL = new URL("../buildings/woodhouse_dooropen.png", import.meta.url).href;
+	scene.load.image("woodhouse_dooropen", woodhouse_dooropenURL);
+
 	//UI
 
 	const cancel_downUrl = new URL("../ui/cancel.png", import.meta.url).href;
@@ -145,4 +156,10 @@ export function preloadAssets(scene) {
 
 	const coinURL = new URL("../sounds/coin.mp3", import.meta.url).href;
 	scene.load.audio("coin", coinURL);
+
+	const opendoorURL = new URL("../sounds/opendoor.mp3", import.meta.url).href;
+	scene.load.audio("opendoor", opendoorURL);
+
+	const closedoorURL = new URL("../sounds/closedoor.mp3", import.meta.url).href;
+	scene.load.audio("closedoor", closedoorURL);
 }
