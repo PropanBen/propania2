@@ -38,6 +38,12 @@ span {
 	text-shadow: -1px -1px 0 #ffffff, 1px -1px 0 #ffffff, -1px 1px 0 #ffffff, 1px 1px 0 #ffffff; /* weißer Rand */
 }
 
+img {
+	image-rendering: pixelated;
+	image-rendering: crisp-edges;
+	object-fit: contain;
+}
+
 #game-container {
 	width: 100vw;
 	height: 100vh;
@@ -468,6 +474,7 @@ canvas {
 	background: #deb887;
 	padding: 30px;
 	border-radius: 16px;
+	border: 2px solid #000;
 	color: #000;
 	display: none;
 	width: 600px; /* größerer Standard */
@@ -475,7 +482,7 @@ canvas {
 	max-height: 90vh; /* Höhe max. 90% des Viewports */
 	overflow-y: auto; /* scrollbar, wenn Inhalt zu groß */
 	box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-	z-index: 10000;
+	z-index: 1000;
 }
 
 /* Header */
@@ -534,6 +541,11 @@ canvas {
 	display: flex;
 	flex-direction: row;
 }
+.profession-cost-container img {
+	margin-left: 10px;
+	width: 32px;
+	height: auto;
+}
 
 .profession-cost {
 	font-size: 2.2rem;
@@ -570,8 +582,9 @@ canvas {
 }
 
 .popup-content {
-	background: #1e1e1e;
-	color: white;
+	background: #deb887;
+	text-shadow: -1px -1px 0 #ffffff, 1px -1px 0 #ffffff, -1px 1px 0 #ffffff, 1px 1px 0 #ffffff;
+	color: rgb(0, 0, 0);
 	padding: 20px;
 	width: 360px;
 	border-radius: 8px;

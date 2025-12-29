@@ -7,8 +7,9 @@ export default class ProfessionsMenu {
 		this.professions = this.scene.professions;
 		this.playerprofessions = [];
 		this.isVisible = false;
+		this.buyinglocked = false;
 
-		// HTML Container erstellen
+		// Haupt UI
 		this.ui = document.createElement("div");
 		this.ui.classList.add("professions-menu");
 		this.ui.innerHTML = `
@@ -20,63 +21,164 @@ export default class ProfessionsMenu {
 		`;
 		document.body.appendChild(this.ui);
 
-		// Close Button
-		const closeBtn = this.ui.querySelector(".professions-close");
-		closeBtn.addEventListener("click", () => this.toggle());
-
-		// Grid Container
 		this.gridContainer = this.ui.querySelector(".professions-grid");
 
-		// Profession Buttons laden
-		this.loadProfessions();
+		this.ui.querySelector(".professions-close").addEventListener("click", () => this.toggle());
 
-		// Playerprofessions laden
+		this.loadProfessions();
 		this.loadPlayerProfessions();
 
-		// Socket Listener für die geladenen Player-Daten
 		socket.on("professions:player:loaded", (data) => {
-			this.playerprofessions = data; // überschreibt
-			if (this.isVisible) this.loadProfessions(); // Refresh UI
+			this.playerprofessions = data;
+			if (this.isVisible) this.loadProfessions();
 		});
 	}
 
 	loadProfessions() {
-		this.gridContainer.innerHTML = ""; // leeren
+		this.gridContainer.innerHTML = "";
 
 		Object.values(this.professions).forEach((prof) => {
 			const playerProf = this.playerprofessions.find((p) => p.profession_id === prof.id);
 
 			const btn = document.createElement("button");
 			btn.classList.add("profession-btn");
+			if (playerProf) btn.classList.add("owned");
 
-			if (playerProf) {
-				// Spieler hat den Beruf bereits
-				btn.classList.add("owned");
-				btn.innerHTML = `
-					<img src="src/assets/ui/professions/${prof.id}.png" alt="${prof.name}" class="profession-icon"/>
-					<span class="profession-name">${prof.name}</span>
-					<span class="profession-level">Level: ${playerProf.level}</span>
-					<span class="profession-exp">Exp: ${playerProf.exp}/${playerProf.level * 100}</span>
-				`;
-			} else {
-				// Spieler hat den Beruf noch nicht
-				btn.innerHTML = `
-					<img src="src/assets/ui/professions/${prof.id}.png" alt="${prof.name}" class="profession-icon"/>
-					<span class="profession-name">${prof.name}</span>
-					<div class="profession-costs-container">
-						<span class="profession-cost">${prof.unlockCost}</span>
-						<img class="propancoin" src="src/assets/ui/money.png" />
-					</div>
-				`;
+			btn.innerHTML = `
+				<img src="src/assets/ui/professions/${prof.id}.png" class="profession-icon"/>
+				<span class="profession-name">${prof.name}</span>
+				${
+					playerProf
+						? `
+							<span>Level: ${playerProf.level}</span>
+							<span>Exp: ${playerProf.exp}/${playerProf.level * 100}</span>
+						`
+						: `<span>Click for details</span>`
+				}
+			`;
 
-				// Socket emit zum freischalten
-				btn.addEventListener("click", () => {
-					socket.emit("profession:unlock", prof.id);
-					this.toggle();
-				});
-			}
+			btn.addEventListener("click", () => {
+				this.openProfessionPopup(prof, playerProf);
+			});
 
 			this.gridContainer.appendChild(btn);
+		});
+	}
+
+	openProfessionPopup(prof, playerProf) {
+		this.ui.style.pointerEvents = "none";
+		this.ui.style.opacity = "0.4";
+
+		const popup = document.createElement("div");
+		popup.classList.add("profession-popup");
+
+		const isOwned = !!playerProf;
+
+		const activeSkillsHtml = Object.values(prof.activeSkills || {})
+			.map(
+				(skill) => `
+					<div style="margin-bottom:10px">
+						<p><strong>${skill.name}</strong></p>
+						<p>Required Level: ${skill.levelRequired}</p>
+						<p>Cooldown: ${skill.cooldown} ms</p>
+						<p>Base EXP: ${skill.baseExp}</p>
+					</div>
+				`
+			)
+			.join("");
+
+		const passivesHtml = Object.values(prof.passives || {})
+			.map(
+				(passive) => `
+					<div style="margin-bottom:10px">
+						<p><strong>${passive.id}</strong></p>
+						<p>${passive.description}</p>
+					</div>
+				`
+			)
+			.join("");
+
+		/* ---------- Buy Section ---------- */
+		let buySectionHtml = "";
+
+		if (!isOwned && !this.buyinglocked) {
+			buySectionHtml = `
+				<div class="profession-cost-container">
+					<p>Unlock Cost: ${prof.unlockCost}</p>
+					<img src="/src/assets/ui/money.png" />
+				</div>
+				<button class="buy-btn">Buy Profession</button>
+			`;
+		}
+
+		if (isOwned) {
+			buySectionHtml = `<p><strong>Already owned</strong></p>`;
+		}
+
+		popup.innerHTML = `
+			<div class="popup-content" style="position:relative">
+
+				<button class="popup-close-top"
+					style="
+						position:absolute;
+						top:5px;
+						right:8px;
+						font-size:2rem;
+						font-weight:bold;
+						background:transparent;
+						border:none;
+						cursor:pointer;
+						color:#ff4444;
+					">X</button>
+
+				<h2>${prof.name}</h2>
+
+				<img 
+					src="src/assets/ui/professions/${prof.id}.png"
+					style="width:100px;height:100px;image-rendering:pixelated;margin-bottom:10px"
+				/>
+
+				<p>${prof.description}</p>
+
+				<hr/>
+
+				<h3>Active Skills</h3>
+				${activeSkillsHtml || "<p>None</p>"}
+
+				<hr/>
+
+				<h3>Passives</h3>
+				${passivesHtml || "<p>None</p>"}
+
+				<hr/>
+
+				${buySectionHtml}
+
+				<button class="close-btn">Close</button>
+			</div>
+		`;
+
+		document.body.appendChild(popup);
+
+		const closePopup = () => {
+			this.ui.style.pointerEvents = "auto";
+			this.ui.style.opacity = "1";
+			popup.remove();
+		};
+
+		if (!isOwned && !this.buyinglocked) {
+			popup.querySelector(".buy-btn").addEventListener("click", () => {
+				socket.emit("profession:unlock", prof.id);
+				closePopup();
+				this.toggle();
+			});
+		}
+
+		popup.querySelector(".close-btn").addEventListener("click", closePopup);
+		popup.querySelector(".popup-close-top").addEventListener("click", closePopup);
+
+		popup.addEventListener("click", (e) => {
+			if (e.target === popup) closePopup();
 		});
 	}
 

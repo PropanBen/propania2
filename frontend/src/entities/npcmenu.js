@@ -55,6 +55,7 @@ export default class NPCMenu extends Phaser.Physics.Arcade.Sprite {
 				buttonProf.textContent = "Choose Profession";
 				buttonProf.addEventListener("click", () => {
 					//	socket.emit("professions:open:request", this.npc.id);
+					this.scene.localPlayer.ProfessionsMenu.buyinglocked = false;
 					this.scene.localPlayer.ProfessionsMenu.toggle();
 					this.toggle();
 				});

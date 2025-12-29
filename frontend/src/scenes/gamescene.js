@@ -306,6 +306,7 @@ export default class GameScene extends Phaser.Scene {
 		}
 
 		if (Phaser.Input.Keyboard.JustDown(this.keyP) && this.localPlayer) {
+			this.localPlayer.ProfessionsMenu.buyinglocked = true;
 			this.localPlayer.ProfessionsMenu.toggle();
 		}
 
